@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d1a">
+<title>Chess Royale</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0d0d1a;--panel:#161628;--card:#1e1e35;--border:#2a2a45;
+  --gold:#c9a84c;--gold2:#f0d080;--gold3:#8a6820;
+  --p1:#4fc3f7;--p2:#f48fb1;
+  --green:#4caf50;--red:#f44336;--purple:#9c27b0;
+  --text:#e8e8f0;--muted:#6b6b8a;
+}
+body{background:var(--bg);color:var(--text);font-family:'Georgia',serif;min-height:100vh;overflow-x:hidden;}
+button{cursor:pointer;border:none;font-family:inherit;}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* ═══ TITLE SCREEN ═══ */
+#s-title{align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 30%, #1a1a3e 0%, #0d0d1a 70%);}
+.title-logo{text-align:center;margin-bottom:32px;}
+.title-crown{font-size:64px;filter:drop-shadow(0 0 20px rgba(201,168,76,0.6));}
+.title-main{font-size:36px;color:var(--gold);letter-spacing:4px;margin:8px 0 4px;}
+.title-sub{font-size:12px;color:var(--muted);letter-spacing:6px;}
+.title-btn{width:100%;max-width:300px;padding:16px;border-radius:14px;font-size:18px;font-weight:bold;letter-spacing:2px;margin:8px 0;}
+.btn-gold{background:linear-gradient(135deg,#c9a84c,#f0d080);color:#0d0d1a;}
+.btn-dark{background:var(--card);color:var(--gold);border:1px solid var(--border);}
+.title-version{font-size:11px;color:var(--muted);margin-top:24px;}
+
+/* ═══ COLLECTION SCREEN ═══ */
+#s-collection{padding:0;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+.top-bar-title{font-size:16px;color:var(--gold);font-weight:bold;letter-spacing:2px;}
+.back-btn{background:none;color:var(--muted);font-size:22px;padding:4px 8px;}
+.collection-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px;}
+
+.piece-card-col{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform 0.15s;}
+.piece-card-col:active{transform:scale(0.97);}
+.piece-card-col.owned{border-color:var(--gold3);}
+.piece-card-col .card-art{height:110px;display:flex;align-items:center;justify-content:center;background:#12122a;}
+.piece-card-col .card-art svg{width:80px;height:80px;}
+.piece-card-col .card-info{padding:8px 10px;}
+.card-name{font-size:13px;font-weight:bold;color:var(--text);}
+.card-class{font-size:10px;color:var(--muted);margin:1px 0;}
+.card-cost{font-size:11px;color:var(--gold);font-weight:bold;}
+.card-tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+.tag{font-size:9px;padding:2px 6px;border-radius:6px;font-weight:bold;}
+.tag-passive{background:rgba(156,39,176,0.25);color:#ce93d8;}
+.tag-active{background:rgba(76,175,80,0.25);color:#a5d6a7;}
+.tag-move{background:rgba(33,150,243,0.25);color:#90caf9;}
+.not-owned-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;border-radius:14px;}
+.lock-icon{font-size:28px;}
+.piece-card-col{position:relative;}
+
+/* ═══ DECK BUILDER ═══ */
+#s-deck{padding:0;}
+.deck-points{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--border);}
+.pts-label{font-size:12px;color:var(--muted);}
+.pts-val{font-size:22px;font-weight:bold;color:var(--gold);}
+.pts-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.pts-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;transition:width 0.3s;}
+
+.deck-sections{display:flex;height:calc(100vh - 108px);}
+.deck-left{flex:1;overflow-y:auto;padding:8px;border-right:1px solid var(--border);}
+.deck-right{width:140px;overflow-y:auto;padding:8px;background:var(--panel);}
+.deck-section-title{font-size:10px;color:var(--muted);letter-spacing:2px;margin:4px 0 6px;padding:0 4px;}
+
+.mini-card{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:5px;cursor:pointer;transition:all 0.15s;}
+.mini-card:active{transform:scale(0.97);}
+.mini-card.in-deck{border-color:var(--gold3);background:#1e1e28;}
+.mini-card.disabled-mc{opacity:0.4;cursor:not-allowed;}
+.mini-art{width:36px;height:36px;flex-shrink:0;}
+.mini-art svg{width:36px;height:36px;}
+.mini-info{flex:1;min-width:0;}
+.mini-name{font-size:11px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mini-cost{font-size:10px;color:var(--gold);}
+.mini-count{font-size:10px;color:var(--muted);}
+
+.deck-slot{display:flex;align-items:center;gap:6px;padding:5px 6px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;cursor:pointer;}
+.deck-slot:active{transform:scale(0.97);}
+.slot-art{width:28px;height:28px;flex-shrink:0;}
+.slot-art svg{width:28px;height:28px;}
+.slot-name{font-size:10px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.slot-remove{color:var(--red);font-size:14px;flex-shrink:0;}
+.deck-empty-hint{font-size:10px;color:var(--muted);text-align:center;padding:12px 4px;font-style:italic;}
+
+.deck-actions{padding:10px 12px;background:var(--panel);border-top:1px solid var(--border);display:flex;gap:8px;}
+.deck-actions button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:bold;}
+
+/* ═══ CAMPAIGN ═══ */
+#s-campaign{padding:0;background:var(--bg);}
+.campaign-header{padding:14px 16px;background:linear-gradient(180deg,#0a1628,#0d0d1a);border-bottom:1px solid #1a2a4a;text-align:center;}
+.campaign-title{font-size:22px;color:#90caf9;letter-spacing:3px;font-weight:bold;}
+.campaign-sub{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:3px;}
+.campaign-scroll{overflow-y:auto;flex:1;padding:16px 12px 32px;}
+.campaign-path{display:flex;flex-direction:column;align-items:center;gap:0;}
+.campaign-node{width:100%;max-width:340px;margin:0 auto;}
+.node-connector{width:3px;height:32px;background:linear-gradient(180deg,#2a3a5a,#1a2a4a);margin:0 auto;}
+.node-connector.done{background:linear-gradient(180deg,#4fc3f7,#2a7ab0);}
+.boss-card{border-radius:16px;overflow:hidden;border:1px solid #2a3a5a;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;position:relative;}
+.boss-card:active{transform:scale(0.98);}
+.boss-card.unlocked{border-color:#2a5298;}
+.boss-card.unlocked:active{box-shadow:0 0 20px rgba(79,195,247,0.3);}
+.boss-card.beaten{border-color:#4caf50;opacity:0.85;}
+.boss-card.locked{cursor:not-allowed;opacity:0.6;filter:grayscale(0.5);}
+.boss-banner{height:90px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:relative;overflow:hidden;}
+.boss-art{font-size:52px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8));}
+.boss-art-right{text-align:right;}
+.boss-info{padding:10px 14px 12px;}
+.boss-name{font-size:16px;font-weight:bold;margin-bottom:2px;}
+.boss-flavor{font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:6px;}
+.boss-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.boss-tag{font-size:9px;padding:2px 7px;border-radius:6px;font-weight:bold;}
+.beaten-badge{position:absolute;top:8px;right:8px;background:#4caf50;color:#fff;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:8px;}
+.locked-overlay{position:absolute;inset:0;background:rgba(5,5,15,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;}
+.locked-cloud{font-size:40px;margin-bottom:4px;}
+.locked-text{font-size:13px;color:var(--muted);letter-spacing:1px;}
+.locked-sub{font-size:10px;color:#3a3a5a;margin-top:2px;}
+
+/* BOSS INTRO MODAL */
+.boss-intro-wrap{position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:flex-end;justify-content:center;z-index:60;padding:0;}
+.boss-intro-box{background:var(--panel);border:1px solid #2a3a6a;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:420px;}
+.boss-intro-art{font-size:72px;text-align:center;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(79,195,247,0.4));}
+.boss-intro-name{font-size:22px;font-weight:bold;text-align:center;margin-bottom:4px;}
+.boss-intro-quote{font-size:13px;color:var(--muted);text-align:center;font-style:italic;line-height:1.5;margin-bottom:14px;padding:0 8px;}
+.boss-intro-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+.intro-stat{background:var(--card);border-radius:10px;padding:8px 10px;text-align:center;}
+.intro-stat-label{font-size:10px;color:var(--muted);margin-bottom:2px;}
+.intro-stat-val{font-size:14px;font-weight:bold;color:var(--gold);}
+.boss-intro-desc{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:14px;padding:8px;background:var(--card);border-radius:10px;}
+
+#s-setup{padding:0;}
+.setup-player-banner{padding:10px 16px;display:flex;align-items:center;gap:10px;}
+.player-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;}
+.av-p1{background:rgba(79,195,247,0.2);color:var(--p1);border:1px solid var(--p1);}
+.av-p2{background:rgba(244,143,177,0.2);color:var(--p2);border:1px solid var(--p2);}
+.setup-player-name{font-size:15px;font-weight:bold;}
+.setup-pts{font-size:12px;color:var(--gold);}
+
+/* ═══ PLACEMENT ═══ */
+#s-placement{padding:0;}
+.placement-wrap{padding:8px 12px;}
+
+/* ═══ BATTLE SCREEN ═══ */
+#s-battle{padding:0;}
+.battle-top{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--border);}
+.player-hud{display:flex;align-items:center;gap:6px;}
+.hud-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;}
+.hud-name{font-size:12px;font-weight:bold;}
+.hud-turn-arrow{font-size:18px;color:var(--gold);}
+.hud-active{opacity:1;}
+.hud-inactive{opacity:0.4;}
+
+.board-wrap{padding:6px 8px;}
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:#0a0a18;border:2px solid var(--border);border-radius:8px;overflow:hidden;}
+.cell{aspect-ratio:1;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.1s;}
+.cell.lsq{background:#2a1f10;}
+.cell.dsq{background:#1a1228;}
+.cell.sel{background:rgba(201,168,76,0.4)!important;}
+.cell.vmove::after{content:'';position:absolute;width:32%;height:32%;border-radius:50%;background:rgba(79,195,247,0.5);border:2px solid rgba(79,195,247,0.8);pointer-events:none;}
+.cell.vatk{background:rgba(244,67,54,0.4)!important;}
+.cell.vplace{background:rgba(79,195,247,0.2)!important;}
+.cell.vplace:active{background:rgba(79,195,247,0.5)!important;}
+.cell.ability-target{background:rgba(156,39,176,0.4)!important;animation:pulse 0.8s infinite alternate;}
+@keyframes pulse{from{opacity:0.7}to{opacity:1}}
+
+.piece-svg{width:82%;height:82%;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.9));}
+.piece-svg.p1-piece{filter:drop-shadow(0 0 6px rgba(79,195,247,0.8)) drop-shadow(0 2px 3px rgba(0,0,0,0.9));}
+.piece-svg.p2-piece{filter:drop-shadow(0 0 6px rgba(244,143,177,0.8)) drop-shadow(0 2px 3px rgba(0,0,0,0.9));}
+.ab-badge{position:absolute;top:1px;right:1px;background:var(--gold);color:#000;font-size:7px;font-weight:bold;border-radius:3px;padding:0 2px;line-height:1.5;z-index:2;}
+
+.battle-hand{padding:6px 8px;background:var(--panel);border-top:1px solid var(--border);min-height:50px;display:flex;gap:5px;overflow-x:auto;}
+.hand-card{flex-shrink:0;width:42px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:all 0.15s;}
+.hand-card.sel-hand{border-color:var(--gold);}
+.hand-card svg{width:30px;height:30px;}
+.hand-card-name{font-size:8px;color:var(--muted);margin-top:2px;text-align:center;line-height:1.1;}
+
+.battle-status{padding:7px 12px;background:var(--card);margin:5px 8px;border-radius:10px;font-size:12px;color:var(--gold2);text-align:center;min-height:32px;display:flex;align-items:center;justify-content:center;}
+
+.ability-row{padding:5px 8px;display:flex;gap:6px;flex-wrap:wrap;}
+.ab-btn{padding:6px 12px;background:rgba(156,39,176,0.2);border:1px solid rgba(156,39,176,0.5);color:#ce93d8;border-radius:8px;font-size:11px;cursor:pointer;}
+.ab-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.ab-btn.ab-active{background:rgba(156,39,176,0.5);border-color:#ce93d8;}
+
+.end-turn-btn{width:calc(100% - 16px);margin:0 8px 8px;padding:12px;background:var(--card);border:1px solid var(--border);color:var(--gold);border-radius:10px;font-size:14px;font-weight:bold;}
+
+/* GAME OVER */
+.gameover-wrap{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.gameover-box{background:var(--panel);border:2px solid var(--gold);border-radius:20px;padding:32px 24px;text-align:center;width:100%;max-width:300px;}
+.go-crown{font-size:48px;}
+.go-title{font-size:24px;color:var(--gold);margin:8px 0 4px;}
+.go-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.go-btn{width:100%;padding:14px;border-radius:12px;font-size:16px;font-weight:bold;margin-top:8px;}
+
+/* PIECE INFO MODAL */
+.modal-wrap{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:0;}
+.modal-box{background:var(--panel);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:420px;max-height:80vh;overflow-y:auto;}
+.modal-art{display:flex;justify-content:center;margin-bottom:12px;}
+.modal-art svg{width:100px;height:100px;}
+.modal-name{font-size:20px;font-weight:bold;text-align:center;color:var(--gold);}
+.modal-class{font-size:12px;color:var(--muted);text-align:center;margin:2px 0 10px;}
+.modal-section{margin-top:12px;}
+.modal-section-title{font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:4px;}
+.modal-desc{font-size:13px;color:var(--text);line-height:1.5;}
+.modal-close{width:100%;padding:12px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:14px;margin-top:16px;}
+
+.captured-mini{display:flex;gap:2px;flex-wrap:wrap;}
+.cap-svg{width:18px;height:18px;opacity:0.6;}
+
+/* ═══ ONLINE PVP ═══ */
+#s-online{align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 20%,#0a1628 0%,#0d0d1a 70%);}
+.online-title{font-size:24px;color:#90caf9;font-weight:bold;letter-spacing:3px;text-align:center;margin-bottom:6px;}
+.online-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:28px;letter-spacing:1px;}
+.online-card{width:100%;max-width:320px;background:var(--panel);border:1px solid #2a3a5a;border-radius:16px;padding:20px;margin-bottom:14px;}
+.online-card-title{font-size:13px;color:#90caf9;font-weight:bold;letter-spacing:2px;margin-bottom:12px;}
+.online-btn{width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:bold;letter-spacing:1px;margin-top:6px;}
+.online-btn-blue{background:linear-gradient(135deg,#1a3a6e,#2a5298);color:#90caf9;border:1px solid #2a5298;}
+.online-btn-dark{background:var(--card);color:var(--muted);border:1px solid var(--border);}
+.room-code-display{background:#0a1628;border:2px solid #2a5298;border-radius:12px;padding:14px;text-align:center;margin:10px 0;}
+.room-code-num{font-size:36px;font-weight:bold;color:#90caf9;letter-spacing:8px;font-family:monospace;}
+.room-code-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.code-input{width:100%;padding:14px;background:#0a1628;border:2px solid #2a3a5a;border-radius:12px;color:#90caf9;font-size:24px;text-align:center;letter-spacing:8px;font-family:monospace;font-weight:bold;outline:none;margin:8px 0;}
+.code-input:focus{border-color:#2a5298;}
+.online-status{padding:10px;background:var(--card);border-radius:10px;font-size:12px;text-align:center;margin-top:10px;min-height:36px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot-waiting{background:#ff9800;animation:blink 1s infinite;}
+.dot-connected{background:#4caf50;}
+.dot-error{background:#f44336;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.pvp-role-badge{display:inline-block;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:bold;margin-bottom:8px;}
+.badge-host{background:rgba(201,168,76,0.2);color:var(--gold);border:1px solid var(--gold3);}
+.badge-guest{background:rgba(79,195,247,0.2);color:#90caf9;border:1px solid #2a5298;}
+</style>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+<!-- ONLINE PVP SCREEN -->
+<div id="s-online" class="screen">
+  <button class="back-btn" style="position:absolute;top:12px;left:12px;" onclick="leaveOnline()">←</button>
+  <div class="online-title">🌐 ONLINE PvP</div>
+  <div class="online-sub">Spiele gegen einen Freund</div>
+
+  <!-- CREATE ROOM -->
+  <div class="online-card" id="oc-create">
+    <div class="online-card-title">⚔ RAUM ERSTELLEN</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Erstelle einen Raum und teile den Code mit deinem Freund.</div>
+    <button class="online-btn online-btn-blue" onclick="createRoom()">Raum erstellen</button>
+    <div id="room-created-area" style="display:none;">
+      <div class="room-code-display">
+        <div class="room-code-num" id="my-room-code">------</div>
+        <div class="room-code-hint">Diesen Code an deinen Freund schicken</div>
+      </div>
+      <button class="online-btn online-btn-dark" onclick="copyRoomCode()" style="font-size:13px;padding:10px;">📋 Code kopieren</button>
+    </div>
+  </div>
+
+  <!-- JOIN ROOM -->
+  <div class="online-card" id="oc-join">
+    <div class="online-card-title">🔗 RAUM BEITRETEN</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Gib den Code deines Freundes ein.</div>
+    <input class="code-input" id="join-code-input" maxlength="6" placeholder="CODE" oninput="this.value=this.value.toUpperCase()" />
+    <button class="online-btn online-btn-blue" onclick="joinRoom()">Beitreten</button>
+  </div>
+
+  <div class="online-status" id="online-status-bar">
+    <div class="status-dot dot-waiting"></div>
+    <span id="online-status-text">Warte auf Verbindung…</span>
+  </div>
+</div>
+
+<!-- TITLE -->
+<div id="s-title" class="screen active">
+  <div class="title-logo">
+    <div class="title-crown">♟</div>
+    <div class="title-main">CHESS ROYALE</div>
+    <div class="title-sub">TACTICAL CARD BATTLE</div>
+  </div>
+  <button class="title-btn btn-gold" onclick="goScreen('s-setup-menu')">⚔ SPIELEN</button>
+  <button class="title-btn btn-dark" onclick="goScreen('s-collection')">📖 SAMMLUNG</button>
+  <button class="title-btn btn-dark" onclick="goScreen('s-deckbuilder')">🃏 DECK BAUEN</button>
+
+  <div class="title-version">v0.4 — Prototype</div>
+</div>
+
+<!-- COLLECTION -->
+<div id="s-collection" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="goScreen('s-title')">←</button>
+    <div class="top-bar-title">SAMMLUNG</div>
+    <div style="width:40px"></div>
+  </div>
+  <div class="collection-grid" id="collection-grid"></div>
+</div>
+
+<!-- DECK BUILDER -->
+<div id="s-deckbuilder" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="goScreen('s-title')">←</button>
+    <div class="top-bar-title">DECK BAUEN</div>
+    <div style="font-size:11px;color:var(--gold)" id="deck-pt-top">30★</div>
+  </div>
+  <div class="deck-points">
+    <div class="pts-label">Punkte:</div>
+    <div class="pts-val" id="db-pts">30</div>
+    <div class="pts-bar-wrap"><div class="pts-bar-fill" id="db-bar" style="width:100%"></div></div>
+    <div style="font-size:11px;color:var(--muted)">/ 30</div>
+  </div>
+  <div class="deck-sections">
+    <div class="deck-left">
+      <div class="deck-section-title">VERFÜGBAR</div>
+      <div id="db-available"></div>
+    </div>
+    <div class="deck-right">
+      <div class="deck-section-title">DECK</div>
+      <div id="db-deck-slots"></div>
+      <div id="db-deck-hint" class="deck-empty-hint">Tippe auf Figuren um sie hinzuzufügen</div>
+    </div>
+  </div>
+  <div class="deck-actions">
+    <button class="btn-dark" style="border-radius:10px" onclick="clearDeck()">🗑 Leeren</button>
+    <button class="btn-gold" style="border-radius:10px" onclick="saveDeck()">✓ Speichern</button>
+  </div>
+</div>
+
+<!-- CAMPAIGN MAP -->
+<div id="s-campaign" class="screen">
+  <div class="campaign-header">
+    <button class="back-btn" style="position:absolute;left:12px;top:10px;" onclick="goScreen('s-title')">←</button>
+    <div class="campaign-title">KAMPAGNE</div>
+    <div class="campaign-sub">PFAD DER KÖNIGE</div>
+  </div>
+  <div class="campaign-scroll">
+    <div class="campaign-path" id="campaign-path"></div>
+  </div>
+</div>
+
+<!-- BOSS INTRO -->
+<div id="boss-intro-modal" class="boss-intro-wrap" style="display:none;">
+  <div class="boss-intro-box">
+    <div class="boss-intro-art" id="bi-art"></div>
+    <div class="boss-intro-name" id="bi-name"></div>
+    <div class="boss-intro-quote" id="bi-quote"></div>
+    <div class="boss-intro-stats" id="bi-stats"></div>
+    <div class="boss-intro-desc" id="bi-desc"></div>
+    <button class="btn-gold" style="width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:bold;margin-bottom:6px;" id="bi-fight-btn">⚔ Kampf beginnen!</button>
+    <button class="modal-close" onclick="document.getElementById('boss-intro-modal').style.display='none'">Abbrechen</button>
+  </div>
+</div>
+
+<!-- SETUP MENU -->
+<div id="s-setup-menu" class="screen" style="align-items:center;justify-content:center;padding:20px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:28px;color:var(--gold);font-weight:bold;letter-spacing:2px;">SPIELMODUS</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px;">Wie möchtest du spielen?</div>
+  </div>
+  <button class="title-btn btn-gold" onclick="startLocalGame()">👥 Lokal (2 Spieler)</button>
+  <button class="title-btn btn-gold" style="background:linear-gradient(135deg,#1a3a6e,#2a5298);color:#90caf9;border:1px solid #2a5298;" onclick="buildCampaignMap();goScreen('s-campaign')">📜 Kampagne</button>
+  <button class="title-btn btn-gold" style="background:linear-gradient(135deg,#0a2a1a,#1a4a2a);color:#80cbc4;border:1px solid #1a4a3a;" onclick="goScreen('s-online');initPeer()">🌐 Online PvP</button>
+  <button class="title-btn btn-dark" onclick="goScreen('s-title')" style="margin-top:8px">← Zurück</button>
+</div>
+
+<!-- ARMY SETUP P1 / P2 -->
+<div id="s-army-setup" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="goScreen('s-setup-menu')">←</button>
+    <div class="top-bar-title" id="army-title">ARMEE AUFBAUEN</div>
+    <div style="font-size:11px;color:var(--gold)" id="army-pts-top">30★</div>
+  </div>
+  <div style="padding:8px 12px;display:flex;align-items:center;gap:10px;background:var(--panel);border-bottom:1px solid var(--border);">
+    <div class="player-avatar" id="army-avatar">1</div>
+    <div>
+      <div style="font-size:14px;font-weight:bold;" id="army-player-label">Spieler 1</div>
+      <div style="font-size:11px;color:var(--muted);">Wähle deine Figuren (König gratis)</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div style="font-size:20px;font-weight:bold;color:var(--gold);" id="army-pts">30</div>
+      <div style="font-size:10px;color:var(--muted);">Punkte übrig</div>
+    </div>
+  </div>
+  <div style="padding:8px;">
+    <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;">FIGUREN WÄHLEN:</div>
+    <div id="army-pick-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;"></div>
+  </div>
+  <div style="padding:8px;border-top:1px solid var(--border);">
+    <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;">DEINE ARMEE:</div>
+    <div id="army-selected" style="display:flex;flex-wrap:wrap;gap:5px;min-height:36px;"></div>
+  </div>
+  <div style="padding:8px;">
+    <button class="btn-gold" style="width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:bold;" id="army-next-btn" onclick="armyNext()">Weiter →</button>
+  </div>
+</div>
+
+<!-- PLACEMENT -->
+<div id="s-placement" class="screen">
+  <div class="top-bar">
+    <div style="font-size:13px;font-weight:bold;" id="plac-title">Spieler 1 platziert</div>
+    <div style="font-size:11px;color:var(--gold);" id="plac-count">0/0</div>
+  </div>
+  <div style="padding:4px 8px;font-size:11px;color:var(--muted);text-align:center;">Figur wählen → blaues Feld tippen · <b style="color:var(--gold)">Gedrückt halten</b> = Info</div>
+  <div class="board-wrap">
+    <div class="board" id="plac-board"></div>
+  </div>
+  <div style="padding:6px 8px;">
+    <div style="font-size:10px;color:var(--muted);margin-bottom:5px;">DEINE HAND:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;" id="plac-hand"></div>
+  </div>
+  <div class="battle-status" id="plac-status">Wähle eine Figur</div>
+  <button class="btn-gold" style="width:calc(100% - 16px);margin:0 8px 8px;padding:12px;border-radius:12px;font-size:14px;font-weight:bold;" id="plac-done-btn" onclick="placDone()" disabled>Aufstellung bestätigen ✓</button>
+</div>
+
+<!-- BATTLE -->
+<div id="s-battle" class="screen">
+  <div class="battle-top">
+    <div class="player-hud" id="hud-p1">
+      <div class="hud-av av-p1">1</div>
+      <div>
+        <div class="hud-name" style="color:var(--p1)">Spieler 1</div>
+        <div class="captured-mini" id="cap-p1"></div>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <div class="hud-turn-arrow" id="turn-arrow">⚔</div>
+      <div style="font-size:10px;color:var(--muted);" id="turn-num">Zug 1</div>
+    </div>
+    <div class="player-hud" id="hud-p2" style="flex-direction:row-reverse;">
+      <div class="hud-av av-p2">2</div>
+      <div style="text-align:right;">
+        <div class="hud-name" style="color:var(--p2)">Spieler 2</div>
+        <div class="captured-mini" id="cap-p2" style="justify-content:flex-end;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="battle-board"></div>
+  </div>
+
+  <div class="ability-row" id="ability-row"></div>
+  <div class="battle-status" id="battle-status">Wähle eine Figur</div>
+  <button class="end-turn-btn" onclick="endTurn()">Zug beenden ↩</button>
+</div>
+
+<!-- PIECE INFO MODAL -->
+<div id="modal-piece" class="modal-wrap" style="display:none;" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-art" id="modal-art"></div>
+    <div class="modal-name" id="modal-name"></div>
+    <div class="modal-class" id="modal-class"></div>
+    <div class="modal-section">
+      <div class="modal-section-title">BEWEGUNG</div>
+      <div class="modal-desc" id="modal-move"></div>
+    </div>
+    <div class="modal-section" id="modal-passive-sec" style="display:none">
+      <div class="modal-section-title">PASSIV ⚡</div>
+      <div class="modal-desc" id="modal-passive"></div>
+    </div>
+    <div class="modal-section" id="modal-active-sec" style="display:none">
+      <div class="modal-section-title">AKTIV 🌟</div>
+      <div class="modal-desc" id="modal-active"></div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:8px;margin-top:8px;">
+      <div class="tag tag-cost" id="modal-cost" style="background:rgba(201,168,76,0.2);color:var(--gold);font-size:12px;padding:4px 10px;border-radius:8px;"></div>
+    </div>
+    <button class="modal-close" onclick="closeModal()">Schließen</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// SVG PIECE DRAWINGS
+// ═══════════════════════════════════════════
+const SVG = {};
+
+SVG.king = (col='#c9a84c') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <defs><radialGradient id="kg${col.replace('#','')}"><stop offset="0%" stop-color="${col}" stop-opacity="0.3"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="30" cy="30" r="28" fill="url(#kg${col.replace('#','')})"/>
+  <rect x="27" y="6" width="6" height="18" rx="3" fill="${col}"/>
+  <rect x="22" y="11" width="16" height="6" rx="3" fill="${col}"/>
+  <polygon points="14,24 30,16 46,24 42,48 18,48" fill="${col}" opacity="0.9"/>
+  <polygon points="18,48 14,24 22,30 30,26 38,30 46,24 42,48" fill="${col}"/>
+  <rect x="16" y="46" width="28" height="7" rx="3" fill="${col}"/>
+  <circle cx="30" cy="26" r="3" fill="#0d0d1a"/>
+  <line x1="14" y1="35" x2="46" y2="35" stroke="#0d0d1a" stroke-width="1.5" opacity="0.4"/>
+</svg>`;
+
+SVG.queen = (col='#c9a84c') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="10" r="5" fill="${col}"/>
+  <circle cx="12" cy="16" r="4" fill="${col}"/>
+  <circle cx="48" cy="16" r="4" fill="${col}"/>
+  <polygon points="12,16 48,16 44,50 16,50" fill="${col}" opacity="0.85"/>
+  <polygon points="12,16 20,28 30,20 40,28 48,16 44,50 16,50" fill="${col}"/>
+  <rect x="14" y="48" width="32" height="7" rx="3" fill="${col}"/>
+  <ellipse cx="30" cy="33" rx="8" ry="5" fill="#0d0d1a" opacity="0.3"/>
+  <line x1="16" y1="36" x2="44" y2="36" stroke="#0d0d1a" stroke-width="1.5" opacity="0.35"/>
+</svg>`;
+
+SVG.rook = (col='#c9a84c') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <rect x="16" y="8" width="8" height="12" rx="2" fill="${col}"/>
+  <rect x="26" y="8" width="8" height="12" rx="2" fill="${col}"/>
+  <rect x="36" y="8" width="8" height="12" rx="2" fill="${col}"/>
+  <rect x="18" y="16" width="24" height="34" rx="3" fill="${col}" opacity="0.9"/>
+  <rect x="14" y="47" width="32" height="7" rx="3" fill="${col}"/>
+  <rect x="22" y="26" width="16" height="12" rx="2" fill="#0d0d1a" opacity="0.35"/>
+  <line x1="18" y1="38" x2="42" y2="38" stroke="#0d0d1a" stroke-width="1.5" opacity="0.3"/>
+</svg>`;
+
+SVG.bishop = (col='#c9a84c') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="10" r="5" fill="${col}"/>
+  <ellipse cx="30" cy="28" rx="10" ry="18" fill="${col}" opacity="0.9"/>
+  <rect x="16" y="46" width="28" height="7" rx="3" fill="${col}"/>
+  <ellipse cx="30" cy="26" rx="5" ry="8" fill="#0d0d1a" opacity="0.3"/>
+  <line x1="25" y1="14" x2="35" y2="14" stroke="#0d0d1a" stroke-width="1.5" opacity="0.5"/>
+</svg>`;
+
+SVG.knight = (col='#c9a84c') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <rect x="14" y="46" width="32" height="7" rx="3" fill="${col}"/>
+  <path d="M20,46 Q16,30 22,20 Q26,12 32,10 Q42,8 44,18 Q46,26 38,32 Q44,36 42,46 Z" fill="${col}" opacity="0.9"/>
+  <circle cx="36" cy="16" r="3" fill="#0d0d1a" opacity="0.6"/>
+  <path d="M22,24 Q28,22 32,26" stroke="#0d0d1a" stroke-width="2" fill="none" opacity="0.4"/>
+</svg>`;
+
+SVG.pawn = (col='#c9a84c') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="14" r="8" fill="${col}"/>
+  <path d="M22,22 Q18,30 20,40 L40,40 Q42,30 38,22 Z" fill="${col}" opacity="0.9"/>
+  <rect x="18" y="40" width="24" height="13" rx="4" fill="${col}"/>
+  <circle cx="30" cy="14" r="3" fill="#0d0d1a" opacity="0.3"/>
+</svg>`;
+
+SVG.ghost_rook = (col='#ce93d8') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <rect x="16" y="8" width="8" height="10" rx="2" fill="${col}" opacity="0.6"/>
+  <rect x="26" y="8" width="8" height="10" rx="2" fill="${col}" opacity="0.6"/>
+  <rect x="36" y="8" width="8" height="10" rx="2" fill="${col}" opacity="0.6"/>
+  <rect x="18" y="16" width="24" height="32" rx="3" fill="${col}" opacity="0.45"/>
+  <rect x="14" y="46" width="32" height="7" rx="3" fill="${col}" opacity="0.6"/>
+  <rect x="22" y="26" width="16" height="10" rx="2" fill="#0d0d1a" opacity="0.25"/>
+  <circle cx="24" cy="33" r="2" fill="${col}"/>
+  <circle cx="36" cy="33" r="2" fill="${col}"/>
+  <path d="M10,30 Q8,20 14,20" stroke="${col}" stroke-width="1.5" fill="none" opacity="0.5" stroke-dasharray="3,2"/>
+  <path d="M50,30 Q52,20 46,20" stroke="${col}" stroke-width="1.5" fill="none" opacity="0.5" stroke-dasharray="3,2"/>
+</svg>`;
+
+SVG.warp_knight = (col='#80cbc4') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <rect x="14" y="46" width="32" height="7" rx="3" fill="${col}"/>
+  <path d="M20,46 Q16,30 22,20 Q26,12 32,10 Q42,8 44,18 Q46,26 38,32 Q44,36 42,46 Z" fill="${col}" opacity="0.85"/>
+  <circle cx="36" cy="16" r="3" fill="#0d0d1a" opacity="0.6"/>
+  <circle cx="8" cy="20" r="4" fill="${col}" opacity="0.4"/>
+  <circle cx="52" cy="40" r="4" fill="${col}" opacity="0.4"/>
+  <line x1="12" y1="20" x2="20" y2="26" stroke="${col}" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.7"/>
+  <line x1="48" y1="40" x2="42" y2="36" stroke="${col}" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.7"/>
+</svg>`;
+
+SVG.archer = (col='#ffcc80') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="12" r="7" fill="${col}"/>
+  <path d="M24,20 Q20,28 22,38 L38,38 Q40,28 36,20 Z" fill="${col}" opacity="0.85"/>
+  <rect x="18" y="38" width="24" height="11" rx="3" fill="${col}"/>
+  <line x1="44" y1="10" x2="52" y2="6" stroke="${col}" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="52" y1="6" x2="50" y2="14" stroke="${col}" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="52" y1="6" x2="44" y2="10" stroke="${col}" stroke-width="1" opacity="0.5"/>
+  <line x1="44" y1="10" x2="36" y2="20" stroke="${col}" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.6"/>
+</svg>`;
+
+SVG.shadow_bishop = (col='#f48fb1') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="10" r="5" fill="${col}"/>
+  <ellipse cx="30" cy="28" rx="10" ry="18" fill="${col}" opacity="0.8"/>
+  <rect x="16" y="46" width="28" height="7" rx="3" fill="${col}"/>
+  <path d="M20,18 L14,44 L30,38 L46,44 L40,18 Z" fill="#0d0d1a" opacity="0.3"/>
+  <circle cx="25" cy="30" r="2" fill="${col}"/>
+  <circle cx="35" cy="30" r="2" fill="${col}"/>
+</svg>`;
+
+SVG.stone_wall = (col='#90a4ae') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="14" width="40" height="35" rx="4" fill="${col}" opacity="0.9"/>
+  <rect x="10" y="48" width="40" height="6" rx="3" fill="${col}"/>
+  <line x1="10" y1="26" x2="50" y2="26" stroke="#0d0d1a" stroke-width="2" opacity="0.4"/>
+  <line x1="10" y1="37" x2="50" y2="37" stroke="#0d0d1a" stroke-width="2" opacity="0.4"/>
+  <line x1="30" y1="14" x2="30" y2="26" stroke="#0d0d1a" stroke-width="2" opacity="0.4"/>
+  <line x1="20" y1="26" x2="20" y2="37" stroke="#0d0d1a" stroke-width="2" opacity="0.4"/>
+  <line x1="40" y1="26" x2="40" y2="37" stroke="#0d0d1a" stroke-width="2" opacity="0.4"/>
+  <line x1="25" y1="37" x2="25" y2="48" stroke="#0d0d1a" stroke-width="2" opacity="0.4"/>
+  <line x1="42" y1="37" x2="42" y2="48" stroke="#0d0d1a" stroke-width="2" opacity="0.4"/>
+</svg>`;
+
+SVG.storm_queen = (col='#90caf9') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="10" r="5" fill="${col}"/>
+  <circle cx="12" cy="16" r="4" fill="${col}"/>
+  <circle cx="48" cy="16" r="4" fill="${col}"/>
+  <polygon points="12,16 48,16 44,50 16,50" fill="${col}" opacity="0.8"/>
+  <polygon points="12,16 20,28 30,20 40,28 48,16 44,50 16,50" fill="${col}"/>
+  <rect x="14" y="48" width="32" height="7" rx="3" fill="${col}"/>
+  <path d="M26,30 L30,24 L34,30 L30,28 Z" fill="#0d0d1a" opacity="0.6"/>
+  <line x1="14" y1="20" x2="8" y2="14" stroke="${col}" stroke-width="1.5" opacity="0.6"/>
+  <line x1="46" y1="20" x2="52" y2="14" stroke="${col}" stroke-width="1.5" opacity="0.6"/>
+</svg>`;
+
+SVG.fire_pawn = (col='#ff8a65') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="16" r="8" fill="${col}"/>
+  <path d="M22,24 Q18,32 20,42 L40,42 Q42,32 38,24 Z" fill="${col}" opacity="0.9"/>
+  <rect x="18" y="42" width="24" height="11" rx="4" fill="${col}"/>
+  <path d="M30,6 Q28,2 30,0 Q32,3 34,1 Q32,6 34,8 Q30,7 30,6Z" fill="#ffcc02" opacity="0.9"/>
+  <path d="M25,8 Q23,5 25,3 Q26,7 28,6 Q26,10 25,8Z" fill="#ffcc02" opacity="0.7"/>
+</svg>`;
+
+SVG.iron_knight = (col='#b0bec5') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <rect x="14" y="46" width="32" height="7" rx="3" fill="${col}"/>
+  <path d="M20,46 Q16,30 22,20 Q26,12 32,10 Q42,8 44,18 Q46,26 38,32 Q44,36 42,46 Z" fill="${col}" opacity="0.9"/>
+  <circle cx="36" cy="16" r="3" fill="#0d0d1a" opacity="0.6"/>
+  <line x1="18" y1="30" x2="42" y2="30" stroke="#0d0d1a" stroke-width="2" opacity="0.3"/>
+  <line x1="20" y1="38" x2="40" y2="38" stroke="#0d0d1a" stroke-width="2" opacity="0.3"/>
+  <rect x="26" y="18" width="6" height="8" rx="2" fill="#0d0d1a" opacity="0.35"/>
+</svg>`;
+
+SVG.void_pawn = (col='#9575cd') => `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="14" r="8" fill="${col}"/>
+  <path d="M22,22 Q18,30 20,40 L40,40 Q42,30 38,22 Z" fill="${col}" opacity="0.7"/>
+  <rect x="18" y="40" width="24" height="13" rx="4" fill="${col}"/>
+  <circle cx="27" cy="13" r="2" fill="#0d0d1a" opacity="0.7"/>
+  <circle cx="33" cy="13" r="2" fill="#0d0d1a" opacity="0.7"/>
+  <path d="M26,18 Q30,22 34,18" stroke="#0d0d1a" stroke-width="1.5" fill="none" opacity="0.5"/>
+  <circle cx="30" cy="30" r="4" fill="#0d0d1a" opacity="0.3"/>
+</svg>`;
+
+// ═══════════════════════════════════════════
+// PIECE CATALOG
+// ═══════════════════════════════════════════
+const CATALOG = [
+  {
+    id:'king', name:'König', class:'Royalty', cost:0, max:1, mandatory:true,
+    svgFn: col => SVG.king(col),
+    moves:'king', passive:null,
+    active:null,
+    moveDesc:'Ein Feld in jede Richtung',
+    passiveDesc:null, activeDesc:null,
+    rarity:'legendary', tags:[]
+  },
+  {
+    id:'queen', name:'Dame', class:'Royalty', cost:9, max:1,
+    svgFn: col => SVG.queen(col),
+    moves:'queen', passive:null, active:null,
+    moveDesc:'Beliebig weit horizontal, vertikal & diagonal',
+    rarity:'epic', tags:[]
+  },
+  {
+    id:'storm_queen', name:'Sturmkönigin', class:'Royalty', cost:11, max:1,
+    svgFn: col => SVG.storm_queen(col),
+    moves:'queen',
+    passive:'Blitz: Beim Schlagen einer Figur darf sie sofort einen weiteren Zug machen',
+    active:null,
+    moveDesc:'Wie Dame — beliebig weit in alle Richtungen',
+    passiveDesc:'Nach jedem Schlag: Bonuszug (einmalig pro Turn)',
+    rarity:'legendary', tags:['passive']
+  },
+  {
+    id:'rook', name:'Turm', class:'Tower', cost:5, max:2,
+    svgFn: col => SVG.rook(col),
+    moves:'rook', passive:null, active:null,
+    moveDesc:'Beliebig weit horizontal und vertikal',
+    rarity:'rare', tags:[]
+  },
+  {
+    id:'ghost_rook', name:'Geisterturm', class:'Tower', cost:7, max:1,
+    svgFn: col => SVG.ghost_rook(col),
+    moves:'rook_ghost',
+    passive:'Phasengang: Bewegt sich durch eigene und feindliche Figuren hindurch',
+    active:null,
+    moveDesc:'Wie Turm, ignoriert aber alle Figuren auf dem Weg',
+    passiveDesc:'Zieht durch alle Figuren hindurch — nur das Zielfeld muss frei/feindlich sein',
+    rarity:'epic', tags:['passive']
+  },
+  {
+    id:'stone_wall', name:'Steinwall', class:'Tower', cost:4, max:2,
+    svgFn: col => SVG.stone_wall(col),
+    moves:'none',
+    passive:'Unzerstörbar: Kann nicht geschlagen werden (außer vom König direkt)',
+    active:null,
+    moveDesc:'Kann sich NICHT bewegen — blockiert Felder permanent',
+    passiveDesc:'Kann nur vom gegnerischen König direkt geschlagen werden',
+    rarity:'rare', tags:['passive']
+  },
+  {
+    id:'bishop', name:'Läufer', class:'Cleric', cost:3, max:2,
+    svgFn: col => SVG.bishop(col),
+    moves:'bishop', passive:null, active:null,
+    moveDesc:'Beliebig weit diagonal',
+    rarity:'common', tags:[]
+  },
+  {
+    id:'shadow_bishop', name:'Schattenläufer', class:'Cleric', cost:5, max:1,
+    svgFn: col => SVG.shadow_bishop(col),
+    moves:'bishop_shadow',
+    passive:null,
+    active:{name:'Schattenschritt', uses:1, desc:'Teleportiert sich auf jedes beliebige dunkle Feld'},
+    moveDesc:'Wie Läufer, kann aber auf beiden Feldfarben stehen',
+    activeDesc:'1× pro Spiel: Springe auf jedes dunkle Feld auf dem Brett',
+    rarity:'epic', tags:['active']
+  },
+  {
+    id:'knight', name:'Springer', class:'Cavalry', cost:3, max:2,
+    svgFn: col => SVG.knight(col),
+    moves:'knight', passive:null, active:null,
+    moveDesc:'L-Form: 2+1 Felder, überspringt alle Figuren',
+    rarity:'common', tags:[]
+  },
+  {
+    id:'warp_knight', name:'Warp-Springer', class:'Cavalry', cost:6, max:1,
+    svgFn: col => SVG.warp_knight(col),
+    moves:'knight',
+    passive:null,
+    active:{name:'Teleport', uses:2, desc:'Teleportiert sich auf jedes freie Feld (2×)'},
+    moveDesc:'Wie Springer — L-Form, überspringt Figuren',
+    activeDesc:'2× pro Spiel: Teleportiere dich auf jedes beliebige freie Feld',
+    rarity:'epic', tags:['active']
+  },
+  {
+    id:'iron_knight', name:'Eisenritter', class:'Cavalry', cost:5, max:1,
+    svgFn: col => SVG.iron_knight(col),
+    moves:'knight',
+    passive:'Gepanzert: Wird er angegriffen, überlebt er einmal (1 Leben extra)',
+    active:null,
+    moveDesc:'Wie Springer — L-Form, überspringt Figuren',
+    passiveDesc:'Der erste Angriff auf ihn wird ignoriert — er überlebt einmal',
+    rarity:'rare', tags:['passive']
+  },
+  {
+    id:'pawn', name:'Bauer', class:'Infantry', cost:1, max:4,
+    svgFn: col => SVG.pawn(col),
+    moves:'pawn', passive:null, active:null,
+    moveDesc:'1 Feld vorwärts, diagonal schlagen',
+    rarity:'common', tags:[]
+  },
+  {
+    id:'fire_pawn', name:'Feuerbauer', class:'Infantry', cost:2, max:3,
+    svgFn: col => SVG.fire_pawn(col),
+    moves:'pawn_fire',
+    passive:null,
+    active:{name:'Feuerstoß', uses:1, desc:'Schlägt eine Figur 2 Felder weit voraus (1×)'},
+    moveDesc:'Wie Bauer — 1 Feld vorwärts, diagonal schlagen',
+    activeDesc:'1× pro Spiel: Schlag eine feindliche Figur direkt vor dir (bis 2 Felder)',
+    rarity:'rare', tags:['active']
+  },
+  {
+    id:'void_pawn', name:'Leerebauer', class:'Infantry', cost:3, max:2,
+    svgFn: col => SVG.void_pawn(col),
+    moves:'pawn_void',
+    passive:'Leeregang: Bewegt sich 1–2 Felder vorwärts statt nur 1',
+    active:null,
+    moveDesc:'1 oder 2 Felder vorwärts, diagonal schlagen',
+    passiveDesc:'Kann sich wahlweise 1 oder 2 Felder vorwärts bewegen',
+    rarity:'rare', tags:['passive']
+  },
+  {
+    id:'archer', name:'Bogenschütze', class:'Ranged', cost:4, max:2,
+    svgFn: col => SVG.archer(col),
+    moves:'archer',
+    passive:null, active:null,
+    moveDesc:'Schlägt diagonal bis zu 2 Felder — überspringt Figuren',
+    rarity:'rare', tags:['move']
+  },
+];
+
+const ROWS=8, COLS=4;
+let G = null;
+let currentSetupPlayer = 1;
+let placPlayer = 1;
+let deckBuild = [];
+
+// Returns the SVG fill color based on whether this piece belongs to the white player
+function pieceColor(playerNum){
+  const isWhite = G && G.whitePlayer===playerNum;
+  return isWhite ? '#f0e8d0' : '#1a1a2a';
+}
+// Glow color for white/black
+function pieceGlow(playerNum){
+  const isWhite = G && G.whitePlayer===playerNum;
+  return isWhite ? 'rgba(240,232,208,0.9)' : 'rgba(120,100,200,0.9)';
+}
+function pieceFilter(playerNum){
+  const glow = pieceGlow(playerNum);
+  return `drop-shadow(0 0 5px ${glow}) drop-shadow(0 2px 3px rgba(0,0,0,0.95))`;
+}
+
+function pc(id){ return CATALOG.find(x=>x.id===id); }
+
+function playerLabel(playerNum){
+  if(!G) return 'Spieler '+playerNum;
+  const isWhite=G.whitePlayer===playerNum;
+  return 'Spieler '+playerNum+' ('+(isWhite?'⬜ Weiß':'⬛ Schwarz')+')';
+}
+function playerColor(playerNum){
+  if(!G) return playerNum===1?'var(--p1)':'var(--p2)';
+  return G.whitePlayer===playerNum ? '#f0e8d0' : '#9090cc';
+}
+function freshGame(){
+  return {
+    board: Array(ROWS).fill(null).map(()=>Array(COLS).fill(null)),
+    cur:1, sel:null, valid:[],
+    turn:1, captured:[], abilityUses:{}, shields:{},
+    bonusTurn:false, activeAbility:null, movesDone:false,
+    p1Army:[], p2Army:[],
+    p1Hand:[], p2Hand:[],
+    selHandIdx:-1,
+    whitePlayer:1, // 1 or 2 — assigned at game start
+  };
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// COLLECTION
+// ═══════════════════════════════════════════
+function buildCollection(){
+  const grid = document.getElementById('collection-grid');
+  grid.innerHTML='';
+  CATALOG.forEach(p=>{
+    const div = document.createElement('div');
+    div.className='piece-card-col owned';
+    const col = rarityColor(p.rarity);
+    div.innerHTML=`
+      <div class="card-art" style="border-bottom:1px solid ${col}30">${p.svgFn(col)}</div>
+      <div class="card-info">
+        <div class="card-name">${p.name}</div>
+        <div class="card-class">${p.class}</div>
+        <div class="card-cost">${p.cost===0?'GRATIS':p.cost+'★'} · max ${p.max}</div>
+        <div class="card-tags">
+          ${p.tags.map(t=>`<span class="tag tag-${t}">${t.toUpperCase()}</span>`).join('')}
+          <span class="tag tag-move" style="background:rgba(255,200,0,0.15);color:#ffe082;">${rarityLabel(p.rarity)}</span>
+        </div>
+      </div>`;
+    div.onclick=()=>showPieceModal(p.id);
+    grid.appendChild(div);
+  });
+}
+
+function rarityColor(r){
+  return {legendary:'#f0d080',epic:'#ce93d8',rare:'#90caf9',common:'#a5d6a7'}[r]||'#c9a84c';
+}
+function rarityLabel(r){
+  return {legendary:'LEGENDÄR',epic:'EPISCH',rare:'SELTEN',common:'GEWÖHNLICH'}[r]||r;
+}
+
+// ═══════════════════════════════════════════
+// PIECE MODAL
+// ═══════════════════════════════════════════
+function showPieceModal(id){
+  const p = pc(id);
+  if(!p) return;
+  const col = rarityColor(p.rarity);
+  document.getElementById('modal-art').innerHTML=`<div style="width:100px;height:100px;">${p.svgFn(col)}</div>`;
+  document.getElementById('modal-name').textContent=p.name;
+  document.getElementById('modal-class').textContent=p.class+' · '+rarityLabel(p.rarity);
+  document.getElementById('modal-move').textContent=p.moveDesc||'—';
+  document.getElementById('modal-cost').textContent=(p.cost===0?'Gratis':p.cost+' Punkte')+' · max '+p.max+'×';
+  const ps=document.getElementById('modal-passive-sec');
+  const as=document.getElementById('modal-active-sec');
+  if(p.passiveDesc){ps.style.display='block';document.getElementById('modal-passive').textContent=p.passiveDesc;}
+  else ps.style.display='none';
+  if(p.activeDesc){as.style.display='block';document.getElementById('modal-active').textContent=p.active.name+' ('+p.active.uses+'×): '+p.activeDesc;}
+  else as.style.display='none';
+  document.getElementById('modal-piece').style.display='flex';
+}
+function closeModal(){document.getElementById('modal-piece').style.display='none';}
+
+// ═══════════════════════════════════════════
+// DECK BUILDER
+// ═══════════════════════════════════════════
+function openDeckBuilder(){
+  renderDeckBuilder();
+  goScreen('s-deckbuilder');
+}
+function renderDeckBuilder(){
+  const pts = deckBuild.reduce((s,x)=>s+(pc(x.id)?.cost||0),0);
+  const rem = 30-pts;
+  document.getElementById('db-pts').textContent=rem;
+  document.getElementById('db-bar').style.width=Math.max(0,(rem/30)*100)+'%';
+
+  const avail = document.getElementById('db-available');
+  avail.innerHTML='';
+  CATALOG.forEach(p=>{
+    if(p.id==='king') return;
+    const cnt = deckBuild.filter(x=>x.id===p.id).length;
+    const can = p.cost<=rem && cnt<p.max;
+    const col = rarityColor(p.rarity);
+    const d=document.createElement('div');
+    d.className='mini-card'+(cnt>0?' in-deck':'')+(can?'':' disabled-mc');
+    d.innerHTML=`<div class="mini-art">${p.svgFn(col)}</div><div class="mini-info"><div class="mini-name">${p.name}</div><div class="mini-cost">${p.cost}★</div></div><div class="mini-count">${cnt}/${p.max}</div>`;
+    if(can) d.onclick=()=>{deckBuild.push({id:p.id,uid:Date.now()+Math.random()});renderDeckBuilder();};
+    avail.appendChild(d);
+  });
+
+  const slots=document.getElementById('db-deck-slots');
+  const hint=document.getElementById('db-deck-hint');
+  slots.innerHTML='';
+  if(deckBuild.length===0){hint.style.display='block';}
+  else{
+    hint.style.display='none';
+    deckBuild.forEach((item,i)=>{
+      const p=pc(item.id); const col=rarityColor(p.rarity);
+      const d=document.createElement('div');
+      d.className='deck-slot';
+      d.innerHTML=`<div class="slot-art">${p.svgFn(col)}</div><div class="slot-name">${p.name}</div><span class="slot-remove">×</span>`;
+      d.onclick=()=>{deckBuild.splice(i,1);renderDeckBuilder();};
+      slots.appendChild(d);
+    });
+  }
+}
+function clearDeck(){deckBuild=[];renderDeckBuilder();}
+function saveDeck(){alert('Deck gespeichert! ('+deckBuild.length+' Figuren)');goScreen('s-title');}
+
+// ═══════════════════════════════════════════
+// LOCAL GAME SETUP
+// ═══════════════════════════════════════════
+function startLocalGame(){
+  G=freshGame();
+  G.whitePlayer = Math.random()<0.5 ? 1 : 2;
+  G.isCampaign=false;
+  currentSetupPlayer=1;
+  document.querySelector('#s-army-setup .back-btn').onclick=()=>goScreen('s-setup-menu');
+
+  // Show coin toss result briefly
+  showCoinToss(G.whitePlayer, ()=>{
+    buildArmySetup(1);
+    goScreen('s-army-setup');
+  });
+}
+
+function showCoinToss(whitePlayer, cb){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:200;flex-direction:column;gap:12px;';
+  ov.innerHTML=`
+    <div style="font-size:52px;animation:spin 0.6s ease-out;">🪙</div>
+    <div style="font-size:22px;color:#f0d080;font-weight:bold;letter-spacing:2px;">MÜNZWURF!</div>
+    <div style="font-size:15px;color:#f0e8d0;margin-top:4px;">⬜ Spieler ${whitePlayer} spielt Weiß</div>
+    <div style="font-size:13px;color:#9090cc;">⬛ Spieler ${whitePlayer===1?2:1} spielt Schwarz</div>
+    <div style="font-size:12px;color:#6b6b8a;margin-top:8px;">Weiß fängt an</div>
+  `;
+  const style=document.createElement('style');
+  style.textContent='@keyframes spin{from{transform:rotate(0deg) scale(0.5)}to{transform:rotate(720deg) scale(1)}}';
+  document.head.appendChild(style);
+  document.body.appendChild(ov);
+  setTimeout(()=>{ov.remove();cb();},2200);
+}
+
+function buildArmySetup(player){
+  const pts = player===1?G.p1Points:G.p2Points;
+  const army = player===1?G.p1Army:G.p2Army;
+  document.getElementById('army-title').textContent='ARMEE AUFBAUEN';
+  const av=document.getElementById('army-avatar');
+  av.className='player-avatar '+(player===1?'av-p1':'av-p2');
+  av.textContent=player;
+  document.getElementById('army-player-label').textContent=playerLabel(player);
+  document.getElementById('army-player-label').style.color=playerColor(player);
+
+  if(!G.p1Points&&!G.p2Points){G.p1Points=30;G.p2Points=30;}
+  refreshArmyUI(player);
+}
+
+function getArmyPts(player){return player===1?G.p1Points:G.p2Points;}
+function getArmy(player){return player===1?G.p1Army:G.p2Army;}
+
+function refreshArmyUI(player){
+  const pts=getArmyPts(player);
+  const army=getArmy(player);
+  document.getElementById('army-pts').textContent=pts;
+  document.getElementById('army-pts-top').textContent=pts+'★';
+
+  const grid=document.getElementById('army-pick-grid');
+  grid.innerHTML='';
+  CATALOG.forEach(p=>{
+    if(p.id==='king') return;
+    const cnt=army.filter(x=>x.id===p.id).length;
+    const can=p.cost<=pts&&cnt<p.max;
+    const col=pieceColor(player);
+    const d=document.createElement('div');
+    d.className='mini-card'+(cnt>0?' in-deck':'')+(can?'':' disabled-mc');
+    d.innerHTML=`<div class="mini-art">${p.svgFn(col)}</div><div class="mini-info"><div class="mini-name">${p.name}</div><div class="mini-cost">${p.cost}★ · ${cnt}/${p.max}</div><div style="font-size:9px;color:#6b6b8a;">${p.moveDesc.substring(0,28)}…</div></div>`;
+    if(can) d.onclick=()=>{army.push({id:p.id,uid:Date.now()+Math.random(),shields:0});if(player===1)G.p1Points-=p.cost;else G.p2Points-=p.cost;refreshArmyUI(player);};
+    addLongPress(d, p.id);
+    grid.appendChild(d);
+  });
+
+  const sel=document.getElementById('army-selected');
+  sel.innerHTML='';
+  army.forEach((item,i)=>{
+    const p=pc(item.id);
+    const col=pieceColor(player);
+    const chip=document.createElement('div');
+    chip.style.cssText='display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:3px 6px;cursor:pointer;';
+    chip.innerHTML=`<div style="width:20px;height:20px">${p.svgFn(col)}</div><span style="font-size:11px">${p.name}</span><span style="color:var(--red);font-size:14px">×</span>`;
+    chip.onclick=()=>{army.splice(i,1);if(player===1)G.p1Points+=p.cost;else G.p2Points+=p.cost;refreshArmyUI(player);};
+    sel.appendChild(chip);
+  });
+
+  const btn=document.getElementById('army-next-btn');
+  btn.disabled=army.length===0;
+  if(G.isCampaign && player===1) btn.textContent='Kampf starten ⚔';
+  else if(player===1) btn.textContent='Weiter → Spieler 2';
+  else btn.textContent='Kampf starten ⚔';
+}
+
+function armyNext(){
+  const player=currentSetupPlayer;
+  const army=getArmy(player);
+  if(!army.some(x=>x.id==='king')) army.push({id:'king',uid:Date.now(),shields:0});
+
+  if(player===1){
+    currentSetupPlayer=2;
+    G.p2Points=30; G.p2Army=[];
+    buildArmySetup(2);
+    document.getElementById('army-next-btn').textContent='Kampf starten ⚔';
+  } else {
+    startPlacementPhase();
+  }
+}
+
+// ═══════════════════════════════════════════
+// PLACEMENT
+// ═══════════════════════════════════════════
+function startPlacementPhase(){
+  placPlayer=1;
+  G.p1Hand=[...G.p1Army];
+  G.p2Hand=[...G.p2Army];
+  G.selHandIdx=-1;
+  goScreen('s-placement');
+  renderPlacScreen(1);
+}
+
+function renderPlacScreen(player){
+  placPlayer=player;
+  G.selHandIdx=-1;
+  const t=document.getElementById('plac-title');
+  t.textContent=(G.whitePlayer===player?'⬜ Weiß':'⬛ Schwarz')+' platziert (Spieler '+player+')';
+  t.style.color=playerColor(player);
+  renderPlacBoard();
+  renderPlacHand();
+  updatePlacCount();
+  document.getElementById('plac-done-btn').disabled=true;
+  document.getElementById('plac-status').textContent='Wähle eine Figur aus deiner Hand';
+}
+
+function renderPlacBoard(){
+  const b=document.getElementById('plac-board');
+  b.innerHTML='';
+  const rows=placPlayer===1?[6,7]:[0,1];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=document.createElement('div');
+    cell.className='cell '+((r+c)%2===0?'lsq':'dsq');
+    const canPlace=rows.includes(r)&&!G.board[r][c];
+    if(canPlace) cell.classList.add('vplace');
+    const p=G.board[r][c];
+    if(p){
+      const pcat=pc(p.id);
+      const col=pieceColor(p.player);
+      const svg=document.createElement('div');
+      svg.className='piece-svg';
+      svg.style.cssText=`width:82%;height:82%;display:flex;align-items:center;justify-content:center;filter:${pieceFilter(p.player)};`;
+      svg.innerHTML=pcat.svgFn(col);
+      cell.appendChild(svg);
+    }
+    if(canPlace) cell.onclick=()=>placePiece(r,c);
+    if(p) addLongPress(cell, p.id);
+    b.appendChild(cell);
+  }
+}
+
+function renderPlacHand(){
+  const hand=document.getElementById('plac-hand');
+  hand.innerHTML='';
+  const arr=placPlayer===1?G.p1Hand:G.p2Hand;
+  arr.forEach((item,i)=>{
+    const p=pc(item.id);
+    const col=pieceColor(placPlayer);
+    const d=document.createElement('div');
+    d.className='hand-card'+(G.selHandIdx===i?' sel-hand':'');
+    d.innerHTML=p.svgFn(col)+`<div class="hand-card-name">${p.name}</div>`;
+    d.onclick=()=>{G.selHandIdx=i;renderPlacHand();document.getElementById('plac-status').textContent=p.name+' — tippe auf blaues Feld';};
+    addLongPress(d, p.id);
+    hand.appendChild(d);
+  });
+}
+
+function placePiece(r,c){
+  if(G.selHandIdx<0){document.getElementById('plac-status').textContent='Wähle zuerst eine Figur!';return;}
+  const arr=placPlayer===1?G.p1Hand:G.p2Hand;
+  const item=arr[G.selHandIdx];
+  G.board[r][c]={id:item.id,player:placPlayer,uid:item.uid,shields:item.id==='iron_knight'?1:0};
+  arr.splice(G.selHandIdx,1);
+  G.selHandIdx=-1;
+  renderPlacBoard(); renderPlacHand(); updatePlacCount();
+  const remaining=arr.length;
+  if(remaining===0){
+    document.getElementById('plac-done-btn').disabled=false;
+    document.getElementById('plac-status').textContent='Alle platziert! Aufstellung bestätigen.';
+  } else {
+    document.getElementById('plac-status').textContent='Platziert! Noch '+remaining+' übrig.';
+  }
+}
+
+function updatePlacCount(){
+  let placed=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(G.board[r][c]?.player===placPlayer) placed++;
+  const total=(placPlayer===1?G.p1Army:G.p2Army).length;
+  document.getElementById('plac-count').textContent=placed+'/'+total;
+}
+
+function placDone(){
+  if(placPlayer===1){
+    renderPlacScreen(2);
+    document.getElementById('plac-done-btn').disabled=true;
+  } else {
+    startBattle();
+  }
+}
+
+// ═══════════════════════════════════════════
+// LONG PRESS — Figuren-Info
+// ═══════════════════════════════════════════
+let _lpTimer=null;
+
+function addLongPress(el, pieceId){
+  const start=(e)=>{
+    _lpTimer=setTimeout(()=>{
+      e.preventDefault();
+      showPieceModal(pieceId);
+    },450);
+  };
+  const cancel=()=>{clearTimeout(_lpTimer);_lpTimer=null;};
+  el.addEventListener('touchstart',start,{passive:true});
+  el.addEventListener('touchend',cancel);
+  el.addEventListener('touchmove',cancel);
+  el.addEventListener('mousedown',start);
+  el.addEventListener('mouseup',cancel);
+  el.addEventListener('mouseleave',cancel);
+}
+
+// ═══════════════════════════════════════════
+// BATTLE
+// ═══════════════════════════════════════════
+function startBattle(){
+  G.cur=1; G.turn=1; G.sel=null; G.valid=[]; G.movesDone=false; G.activeAbility=null;
+  goScreen('s-battle');
+  // In campaign, hide end-turn label during AI turns
+  const etBtn=document.querySelector('.end-turn-btn');
+  if(etBtn) etBtn.style.display='block';
+  renderBattle(); updateBattleHUD();
+  setBattleStatus('Klicke auf eine Figur · Gedrückt halten = Info');
+}
+
+function renderBattle(){
+  const b=document.getElementById('battle-board');
+  b.innerHTML='';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=document.createElement('div');
+    cell.className='cell '+((r+c)%2===0?'lsq':'dsq');
+    if(G.sel&&G.sel[0]===r&&G.sel[1]===c) cell.classList.add('sel');
+
+    const vm=G.valid.find(m=>m[0]===r&&m[1]===c);
+    if(vm){
+      if(G.activeAbility==='teleport'||G.activeAbility==='shadow_jump') cell.classList.add('ability-target');
+      else if(G.activeAbility==='fire_shot') cell.classList.add('ability-target');
+      else if(vm[2]) cell.classList.add('vatk');
+      else cell.classList.add('vmove');
+    }
+
+    const p=G.board[r][c];
+    if(p){
+      const pcat=pc(p.id);
+      const col=pieceColor(p.player);
+      const wrap=document.createElement('div');
+      wrap.style.cssText='width:82%;height:82%;display:flex;align-items:center;justify-content:center;position:relative;';
+      const svg=document.createElement('div');
+      svg.className='piece-svg';
+      svg.style.cssText=`width:100%;height:100%;filter:${pieceFilter(p.player)};`;
+      svg.innerHTML=pcat.svgFn(col);
+      wrap.appendChild(svg);
+      if(pcat.active){
+        const used=G.abilityUses[p.uid]||0;
+        const rem=pcat.active.uses-used;
+        if(rem>0){const badge=document.createElement('div');badge.className='ab-badge';badge.textContent=rem;wrap.appendChild(badge);}
+      }
+      if(p.shields>0){const sb=document.createElement('div');sb.className='ab-badge';sb.style.background='#90a4ae';sb.textContent='🛡';wrap.appendChild(sb);}
+      cell.appendChild(wrap);
+    }
+    cell.onclick=()=>handleBattleClick(r,c);
+    if(p) addLongPress(cell, p.id);
+    b.appendChild(cell);
+  }
+}
+
+function handleBattleClick(r,c){
+  const p=G.board[r][c];
+
+  if(G.activeAbility==='teleport'||G.activeAbility==='shadow_jump'){
+    if(G.valid.some(m=>m[0]===r&&m[1]===c)){
+      const [sr,sc]=G.sel;
+      G.board[r][c]=G.board[sr][sc];
+      G.board[sr][sc]=null;
+      G.abilityUses[G.board[r][c].uid]=(G.abilityUses[G.board[r][c].uid]||0)+1;
+      G.activeAbility=null; G.sel=null; G.valid=[]; G.movesDone=true;
+      renderBattle(); updateBattleHUD();
+      setBattleStatus('Fähigkeit genutzt! Zug beenden oder weitermachen.');
+      renderAbilityRow();
+    }
+    return;
+  }
+  if(G.activeAbility==='fire_shot'){
+    if(G.valid.some(m=>m[0]===r&&m[1]===c)){
+      if(G.board[r][c]) captureAndCheck(r,c,null,null);
+      G.abilityUses[G.board[G.sel[0]][G.sel[1]]?.uid]=(G.abilityUses[G.board[G.sel[0]][G.sel[1]]?.uid]||0)+1;
+      G.activeAbility=null; G.valid=[]; G.movesDone=true;
+      renderBattle(); updateBattleHUD();
+      setBattleStatus('Feuerstoß! Zug beenden.');
+      renderAbilityRow();
+    }
+    return;
+  }
+
+  if(G.sel&&G.valid.some(m=>m[0]===r&&m[1]===c)){doMove(r,c);return;}
+
+  if(p&&p.player===G.cur&&!G.movesDone){
+    G.sel=[r,c]; G.valid=getMoves(r,c); G.activeAbility=null;
+    renderBattle();
+    const pcat=pc(p.id);
+    setBattleStatus(pcat.name+' — '+G.valid.length+' Züge möglich');
+    renderAbilityRow(r,c,p);
+    return;
+  }
+
+  G.sel=null; G.valid=[]; G.activeAbility=null;
+  renderBattle(); setBattleStatus('Wähle eine Figur');
+  document.getElementById('ability-row').innerHTML='';
+}
+
+function doMove(tr,tc){
+  if(isOnlinePvP && G.cur!==onlineMyPlayer) return; // block if not my turn
+  const [sr,sc]=G.sel;
+  const moving=G.board[sr][sc];
+  const target=G.board[tr][tc];
+  // Send move to opponent
+  if(isOnlinePvP) sendOnlineMsg('move',{sr,sc,tr,tc});
+  if(target){
+    const killed=captureAndCheck(tr,tc,sr,sc);
+    if(killed==='game_over') return;
+  } else {
+    G.board[tr][tc]=moving;
+    G.board[sr][sc]=null;
+  }
+  G.sel=null; G.valid=[]; G.movesDone=true;
+
+  // Storm Queen bonus turn
+  const pcat=pc(moving.id);
+  if(pcat.id==='storm_queen'&&target&&!G.bonusTurn){
+    G.bonusTurn=true; G.movesDone=false;
+    setBattleStatus('⚡ Blitz! Sturmkönigin darf nochmal ziehen!');
+    G.sel=[tr,tc]; G.valid=getMoves(tr,tc);
+    renderBattle(); return;
+  }
+  G.bonusTurn=false;
+  renderBattle(); updateBattleHUD(); updateCaptured();
+  setBattleStatus('Zug gemacht! Zug beenden oder Fähigkeit nutzen.');
+  document.getElementById('ability-row').innerHTML='';
+}
+
+function captureAndCheck(tr,tc,sr,sc){
+  const target=G.board[tr][tc];
+  if(!target) return null;
+  if(target.shields>0){
+    target.shields--;
+    if(sr!==null){G.board[tr][tc]=G.board[sr][sc];G.board[sr][sc]=null;}
+    setBattleStatus('🛡 Schild absorbiert den Angriff!');
+    return null;
+  }
+  G.captured.push(target);
+  if(sr!==null){G.board[tr][tc]=G.board[sr][sc];G.board[sr][sc]=null;}
+  else G.board[tr][tc]=null;
+  if(target.id==='king'){
+    renderBattle();
+    setTimeout(()=>showGameOver(G.cur),300);
+    return 'game_over';
+  }
+  return target;
+}
+
+function getMoves(r,c){
+  const piece=G.board[r][c]; if(!piece) return [];
+  const pcat=pc(piece.id);
+  const moves=[];
+  const dir=piece.player===1?-1:1;
+  const inB=(r,c)=>r>=0&&r<ROWS&&c>=0&&c<COLS;
+  const empty=(r,c)=>!G.board[r][c];
+  const enemy=(r,c)=>G.board[r][c]&&G.board[r][c].player!==piece.player;
+  const own=(r,c)=>G.board[r][c]&&G.board[r][c].player===piece.player;
+  const wall=(r,c)=>G.board[r][c]?.id==='stone_wall';
+  const slide=(dr,dc,thru=false)=>{
+    let nr=r+dr,nc=c+dc;
+    while(inB(nr,nc)){
+      if(empty(nr,nc)){moves.push([nr,nc,false]);}
+      else if(enemy(nr,nc)&&!wall(nr,nc)){moves.push([nr,nc,true]);if(!thru)break;}
+      else if(wall(nr,nc)&&piece.id==='king'){moves.push([nr,nc,true]);break;}
+      else{if(!thru)break;}
+      nr+=dr;nc+=dc;
+    }
+  };
+  switch(pcat.moves){
+    case'king': [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(inB(nr,nc)&&!own(nr,nc)&&(!wall(nr,nc)||enemy(nr,nc)))moves.push([nr,nc,!!G.board[nr]?.[nc]]);});break;
+    case'queen': [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]].forEach(d=>slide(...d));break;
+    case'rook': [[-1,0],[1,0],[0,-1],[0,1]].forEach(d=>slide(...d));break;
+    case'rook_ghost': [[-1,0],[1,0],[0,-1],[0,1]].forEach(d=>slide(d[0],d[1],true));break;
+    case'bishop':case'bishop_shadow': [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(d=>slide(...d));break;
+    case'knight': [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(inB(nr,nc)&&!own(nr,nc)&&!wall(nr,nc))moves.push([nr,nc,!!G.board[nr]?.[nc]]);});break;
+    case'pawn':{const nr=r+dir;if(inB(nr,c)&&empty(nr,c))moves.push([nr,c,false]);[-1,1].forEach(dc=>{if(inB(nr,c+dc)&&enemy(nr,c+dc)&&!wall(nr,c+dc))moves.push([nr,c+dc,true]);});break;}
+    case'pawn_fire':{const nr=r+dir;if(inB(nr,c)&&empty(nr,c))moves.push([nr,c,false]);[-1,1].forEach(dc=>{if(inB(nr,c+dc)&&enemy(nr,c+dc))moves.push([nr,c+dc,true]);});break;}
+    case'pawn_void':{const nr=r+dir,nr2=r+dir*2;if(inB(nr,c)&&empty(nr,c)){moves.push([nr,c,false]);if(inB(nr2,c)&&empty(nr2,c))moves.push([nr2,c,false]);}[-1,1].forEach(dc=>{if(inB(nr,c+dc)&&enemy(nr,c+dc))moves.push([nr,c+dc,true]);});break;}
+    case'archer':[[-2,-2],[-2,2],[2,-2],[2,2],[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>{const nr=r+dr,nc=c+dc;if(inB(nr,nc)&&!own(nr,nc)&&!wall(nr,nc))moves.push([nr,nc,!!G.board[nr]?.[nc]]);});break;
+    case'none': break;
+  }
+  return moves;
+}
+
+function renderAbilityRow(r,c,piece){
+  const row=document.getElementById('ability-row');
+  row.innerHTML='';
+  if(!piece) return;
+  const pcat=pc(piece.id);
+  if(pcat.passive){
+    const span=document.createElement('span');
+    span.style.cssText='font-size:10px;color:#ce93d8;padding:4px 6px;';
+    span.textContent='⚡ '+pcat.passive.substring(0,40)+'…';
+    row.appendChild(span);
+  }
+  if(pcat.active){
+    const used=G.abilityUses[piece.uid]||0;
+    const rem=pcat.active.uses-used;
+    const btn=document.createElement('button');
+    btn.className='ab-btn';
+    btn.textContent='🌟 '+pcat.active.name+' ('+rem+'×)';
+    btn.disabled=rem<=0||G.movesDone;
+    btn.onclick=()=>activateAbility(pcat.id,r,c,piece);
+    row.appendChild(btn);
+  }
+}
+
+function activateAbility(pcatId,r,c,piece){
+  if(pcatId==='warp_knight'){
+    G.activeAbility='teleport'; G.sel=[r,c];
+    G.valid=[];
+    for(let rr=0;rr<ROWS;rr++) for(let cc=0;cc<COLS;cc++) if(!G.board[rr][cc]) G.valid.push([rr,cc,false]);
+    renderBattle(); setBattleStatus('🌀 Teleport — tippe auf ein freies Zielfeld!');
+  }
+  if(pcatId==='shadow_bishop'){
+    G.activeAbility='shadow_jump'; G.sel=[r,c];
+    G.valid=[];
+    for(let rr=0;rr<ROWS;rr++) for(let cc=0;cc<COLS;cc++) if(!G.board[rr][cc]&&(rr+cc)%2===1) G.valid.push([rr,cc,false]);
+    renderBattle(); setBattleStatus('🌑 Schattenschritt — tippe auf ein dunkles Feld!');
+  }
+  if(pcatId==='fire_pawn'){
+    G.activeAbility='fire_shot'; G.sel=[r,c];
+    const dir=piece.player===1?-1:1;
+    G.valid=[];
+    for(let d=1;d<=2;d++){const nr=r+dir*d;if(nr>=0&&nr<ROWS&&G.board[nr][c]&&G.board[nr][c].player!==piece.player) G.valid.push([nr,c,true]);}
+    renderBattle(); setBattleStatus('🔥 Feuerstoß — tippe auf ein Ziel!');
+  }
+}
+
+function endTurn(){
+  G.bonusTurn=false;
+  if(isOnlinePvP){
+    const nextTurn = (G.cur===2) ? G.turn+1 : G.turn;
+    sendOnlineMsg('end_turn',{turn:nextTurn});
+    G.cur=G.cur===1?2:1;
+    if(G.cur===1) G.turn++;
+    G.sel=null; G.valid=[]; G.movesDone=false; G.activeAbility=null;
+    renderBattle(); updateBattleHUD();
+    setBattleStatus('Gegner ist am Zug…');
+    document.getElementById('ability-row').innerHTML='';
+    const etBtn=document.querySelector('.end-turn-btn');
+    if(etBtn) etBtn.disabled=true;
+    return;
+  }
+  G.cur=G.cur===1?2:1;
+  if(G.cur===1) G.turn++;
+  G.sel=null; G.valid=[]; G.movesDone=false; G.activeAbility=null;
+  renderBattle(); updateBattleHUD();
+  setBattleStatus(isVsAI&&G.cur===2 ? '🤖 KI denkt nach…' : 'Klicke auf eine Figur · Gedrückt halten = Info');
+  document.getElementById('ability-row').innerHTML='';
+  const etBtn=document.querySelector('.end-turn-btn');
+  if(isVsAI && G.cur===2){
+    if(etBtn) etBtn.disabled=true;
+    setTimeout(()=>{doAITurn(); if(etBtn) etBtn.disabled=false;}, 500);
+  } else {
+    if(etBtn) etBtn.disabled=false;
+  }
+}
+
+function setBattleStatus(txt){document.getElementById('battle-status').textContent=txt;}
+
+function updateBattleHUD(){
+  const p1=document.getElementById('hud-p1');
+  const p2=document.getElementById('hud-p2');
+  if(G.cur===1){p1.className='player-hud hud-active';p2.className='player-hud hud-inactive';}
+  else{p1.className='player-hud hud-inactive';p2.className='player-hud hud-active';}
+  document.getElementById('turn-num').textContent='Zug '+G.turn;
+  // Update names with white/black
+  const n1=p1.querySelector('.hud-name');
+  const n2=p2.querySelector('.hud-name');
+  if(n1){n1.textContent=(G.whitePlayer===1?'⬜ ':'⬛ ')+'Spieler 1';n1.style.color=playerColor(1);}
+  if(n2){n2.textContent=(G.whitePlayer===2?'⬜ ':'⬛ ')+'Spieler 2';n2.style.color=playerColor(2);}
+  // Show whose turn with color
+  const arrow=document.getElementById('turn-arrow');
+  if(arrow){arrow.style.color=playerColor(G.cur);}
+}
+
+function updateCaptured(){
+  const c1=document.getElementById('cap-p1');
+  const c2=document.getElementById('cap-p2');
+  const byP1=G.captured.filter(x=>x.player===2);
+  const byP2=G.captured.filter(x=>x.player===1);
+  c1.innerHTML=byP1.slice(-4).map(x=>`<div class="cap-svg">${pc(x.id).svgFn(rarityColor(pc(x.id).rarity))}</div>`).join('');
+  c2.innerHTML=byP2.slice(-4).map(x=>`<div class="cap-svg">${pc(x.id).svgFn(rarityColor(pc(x.id).rarity))}</div>`).join('');
+}
+
+function showGameOver(winner){
+  const wrap=document.createElement('div');
+  wrap.className='gameover-wrap';
+  wrap.innerHTML=`<div class="gameover-box">
+    <div class="go-crown">👑</div>
+    <div class="go-title">Spieler ${winner} gewinnt!</div>
+    <div class="go-sub">König wurde geschlagen</div>
+    <button class="go-btn btn-gold" onclick="restartAll()">Neues Spiel ↺</button>
+    <button class="go-btn btn-dark" style="margin-top:8px" onclick="this.closest('.gameover-wrap').remove();goScreen('s-title')">Hauptmenü</button>
+  </div>`;
+  document.body.appendChild(wrap);
+}
+
+function restartAll(){
+  document.querySelector('.gameover-wrap')?.remove();
+  startLocalGame();
+}
+
+// ═══════════════════════════════════════════
+// CAMPAIGN DATA
+// ═══════════════════════════════════════════
+const CAMPAIGN_BOSSES = [
+  {
+    id:'forest_guardian',
+    name:'Der Waldwächter',
+    emoji:'🌲',
+    color:'#4caf50',
+    bgGrad:'linear-gradient(135deg,#0a2a0a,#1a3a1a)',
+    quote:'"Du betrittst meinen Wald... ein Fehler, den du nicht wiederholen wirst."',
+    difficulty:'Einsteiger',
+    diffColor:'#4caf50',
+    pts:25,
+    style:'Aggressiv — greift immer die nächste erreichbare Figur an',
+    lore:'Einst ein treuer Ritter, wurde er vom Wald selbst verwandelt. Seine Bauern bewegen sich wie Wölfe — schnell und tödlich.',
+    tags:[{label:'AGGRESSIV',color:'rgba(244,67,54,0.25)',text:'#ef9a9a'},{label:'EINFACH',color:'rgba(76,175,80,0.25)',text:'#a5d6a7'}],
+    army:[
+      {id:'king',uid:'bk1',shields:0},
+      {id:'pawn',uid:'bp1',shields:0},{id:'pawn',uid:'bp2',shields:0},{id:'pawn',uid:'bp3',shields:0},
+      {id:'void_pawn',uid:'bvp1',shields:0},{id:'void_pawn',uid:'bvp2',shields:0},
+      {id:'knight',uid:'bkn1',shields:0},{id:'rook',uid:'br1',shields:0},
+    ],
+    ai:'aggressive',
+  },
+  {
+    id:'iron_queen',
+    name:'Die Eisenkönigin',
+    emoji:'👑',
+    color:'#90caf9',
+    bgGrad:'linear-gradient(135deg,#0a1628,#1a2a4a)',
+    quote:'"Strategie ist alles. Du bist bereits besiegt — du weißt es nur noch nicht."',
+    difficulty:'Fortgeschritten',
+    diffColor:'#ff9800',
+    pts:30,
+    style:'Defensiv — schützt ihre Dame um jeden Preis, kontert gezielt',
+    lore:'Die kälteste Herrscherin aller Reiche. Sie opfert niemals ihre Dame und schlägt nur zu wenn sie überlegen ist.',
+    tags:[{label:'DEFENSIV',color:'rgba(33,150,243,0.25)',text:'#90caf9'},{label:'MITTEL',color:'rgba(255,152,0,0.25)',text:'#ffcc80'}],
+    army:[
+      {id:'king',uid:'bk2',shields:0},
+      {id:'storm_queen',uid:'bsq1',shields:0},
+      {id:'rook',uid:'br2',shields:0},{id:'rook',uid:'br3',shields:0},
+      {id:'iron_knight',uid:'bik1',shields:1},
+      {id:'bishop',uid:'bb1',shields:0},{id:'bishop',uid:'bb2',shields:0},
+      {id:'pawn',uid:'bp4',shields:0},{id:'pawn',uid:'bp5',shields:0},
+    ],
+    ai:'defensive',
+  },
+  {
+    id:'void_lord',
+    name:'Der Leerenfürst',
+    emoji:'💀',
+    color:'#ce93d8',
+    bgGrad:'linear-gradient(135deg,#1a0a2a,#2a1a3a)',
+    quote:'"Ich existiere jenseits eurer Regeln. Ich bin das Ende des Spiels selbst."',
+    difficulty:'Legendär',
+    diffColor:'#ce93d8',
+    pts:30,
+    style:'Chaotisch — nutzt Fähigkeiten aggressiv, unberechenbar',
+    lore:'Er kam aus der Leere zwischen den Zügen. Seine Figuren ignorieren Grenzen und sein König flüstert Züge voraus.',
+    tags:[{label:'CHAOTISCH',color:'rgba(156,39,176,0.25)',text:'#ce93d8'},{label:'LEGENDÄR',color:'rgba(201,168,76,0.25)',text:'#f0d080'}],
+    army:[
+      {id:'king',uid:'bk3',shields:0},
+      {id:'ghost_rook',uid:'bgr1',shields:0},{id:'ghost_rook',uid:'bgr2',shields:0},
+      {id:'warp_knight',uid:'bwk1',shields:0},
+      {id:'shadow_bishop',uid:'bsb1',shields:0},
+      {id:'stone_wall',uid:'bsw1',shields:0},{id:'stone_wall',uid:'bsw2',shields:0},
+      {id:'void_pawn',uid:'bvp3',shields:0},{id:'void_pawn',uid:'bvp4',shields:0},
+    ],
+    ai:'chaos',
+  },
+];
+
+const COMING_SOON = [
+  {name:'Der Sturmkönig',emoji:'⚡',hint:'Meister der Blitze'},
+  {name:'Die Schattenweberin',emoji:'🕷',hint:'Sie sieht jeden Zug'},
+];
+
+let campaignProgress = JSON.parse(localStorage.getItem('cr_campaign')||'{}');
+let currentBoss = null;
+let isVsAI = false;
+let aiStyle = 'aggressive';
+
+// ═══════════════════════════════════════════
+// CAMPAIGN MAP RENDER
+// ═══════════════════════════════════════════
+function buildCampaignMap(){
+  const path = document.getElementById('campaign-path');
+  path.innerHTML='';
+
+  CAMPAIGN_BOSSES.forEach((boss,i)=>{
+    const beaten = !!campaignProgress[boss.id];
+    const unlocked = i===0 || !!campaignProgress[CAMPAIGN_BOSSES[i-1].id];
+
+    // Connector above (except first)
+    if(i>0){
+      const conn = document.createElement('div');
+      conn.className='node-connector'+(!!campaignProgress[CAMPAIGN_BOSSES[i-1].id]?' done':'');
+      path.appendChild(conn);
+    }
+
+    const node = document.createElement('div');
+    node.className='campaign-node';
+
+    const card = document.createElement('div');
+    card.className='boss-card '+(beaten?'beaten':unlocked?'unlocked':'locked');
+
+    card.innerHTML=`
+      <div class="boss-banner" style="background:${boss.bgGrad}">
+        <div>
+          <div style="font-size:11px;color:${boss.diffColor};font-weight:bold;letter-spacing:2px;margin-bottom:4px;">STAGE ${i+1} · ${boss.difficulty.toUpperCase()}</div>
+          <div style="font-size:18px;font-weight:bold;color:#e8e8f0;">${boss.name}</div>
+        </div>
+        <div class="boss-art">${boss.emoji}</div>
+        ${beaten?'<div class="beaten-badge">✓ BESIEGT</div>':''}
+      </div>
+      <div class="boss-info" style="background:var(--card);">
+        <div class="boss-flavor">${boss.lore.substring(0,80)}…</div>
+        <div class="boss-tags">
+          ${boss.tags.map(t=>`<span class="boss-tag" style="background:${t.color};color:${t.text};">${t.label}</span>`).join('')}
+          <span class="boss-tag" style="background:rgba(201,168,76,0.15);color:#c9a84c;">${boss.pts}★ KI</span>
+        </div>
+      </div>
+      ${!unlocked?`<div class="locked-overlay"><div class="locked-cloud">☁️</div><div class="locked-text">GESPERRT</div><div class="locked-sub">Besiege vorherigen Boss</div></div>`:''}
+    `;
+
+    if(unlocked) card.onclick=()=>openBossIntro(boss.id);
+    node.appendChild(card);
+    path.appendChild(node);
+  });
+
+  // Coming soon nodes
+  COMING_SOON.forEach((cs,i)=>{
+    const conn=document.createElement('div');
+    conn.className='node-connector';
+    path.appendChild(conn);
+
+    const node=document.createElement('div');
+    node.className='campaign-node';
+    node.innerHTML=`
+      <div class="boss-card locked" style="cursor:not-allowed;">
+        <div class="boss-banner" style="background:linear-gradient(135deg,#0d0d1a,#1a1a2e);">
+          <div>
+            <div style="font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:4px;">STAGE ${CAMPAIGN_BOSSES.length+i+1}</div>
+            <div style="font-size:16px;font-weight:bold;color:var(--muted);">${cs.name}</div>
+            <div style="font-size:10px;color:#3a3a5a;margin-top:3px;">${cs.hint}</div>
+          </div>
+          <div style="font-size:40px;opacity:0.3;">${cs.emoji}</div>
+        </div>
+        <div class="locked-overlay" style="border-radius:16px;">
+          <div class="locked-cloud">☁️</div>
+          <div class="locked-text" style="color:var(--muted);">COMING SOON</div>
+          <div class="locked-sub">Bald verfügbar</div>
+        </div>
+      </div>`;
+    path.appendChild(node);
+  });
+}
+
+// ═══════════════════════════════════════════
+// BOSS INTRO
+// ═══════════════════════════════════════════
+function openBossIntro(bossId){
+  const boss = CAMPAIGN_BOSSES.find(b=>b.id===bossId);
+  if(!boss) return;
+  currentBoss=boss;
+  document.getElementById('bi-art').textContent=boss.emoji;
+  document.getElementById('bi-art').style.cssText=`font-size:72px;text-align:center;margin-bottom:8px;filter:drop-shadow(0 0 20px ${boss.color}60);`;
+  document.getElementById('bi-name').textContent=boss.name;
+  document.getElementById('bi-name').style.color=boss.color;
+  document.getElementById('bi-quote').textContent=boss.quote;
+  document.getElementById('bi-stats').innerHTML=`
+    <div class="intro-stat"><div class="intro-stat-label">SCHWIERIGKEIT</div><div class="intro-stat-val" style="color:${boss.diffColor}">${boss.difficulty}</div></div>
+    <div class="intro-stat"><div class="intro-stat-label">KI-PUNKTE</div><div class="intro-stat-val">${boss.pts}★</div></div>
+    <div class="intro-stat"><div class="intro-stat-label">FIGUREN</div><div class="intro-stat-val">${boss.army.length}</div></div>
+    <div class="intro-stat"><div class="intro-stat-label">STIL</div><div class="intro-stat-val" style="font-size:10px;">${boss.ai.toUpperCase()}</div></div>
+  `;
+  document.getElementById('bi-desc').innerHTML=`<b style="color:${boss.color}">Taktik:</b> ${boss.style}<br><br>${boss.lore}`;
+  document.getElementById('bi-fight-btn').onclick=()=>startCampaignBattle(bossId);
+  document.getElementById('boss-intro-modal').style.display='flex';
+}
+
+// ═══════════════════════════════════════════
+// CAMPAIGN BATTLE START
+// ═══════════════════════════════════════════
+function startCampaignBattle(bossId){
+  document.getElementById('boss-intro-modal').style.display='none';
+  const boss = CAMPAIGN_BOSSES.find(b=>b.id===bossId);
+  isVsAI=true;
+  aiStyle=boss.ai;
+  currentBoss=boss;
+
+  G=freshGame();
+  G.p1Points=30; G.p2Points=boss.pts;
+  G.p1Army=[]; G.p2Army=boss.army.map(a=>({...a,shields:a.shields||0}));
+  G.whitePlayer=1;
+  G.isCampaign=true;
+  G.bossId=bossId;
+  currentSetupPlayer=1;
+
+  document.querySelector('#s-army-setup .back-btn').onclick=()=>{isVsAI=false;goScreen('s-campaign');};
+  buildArmySetup(1);
+  goScreen('s-army-setup');
+}
+
+// ═══════════════════════════════════════════
+// AI LOGIC
+// ═══════════════════════════════════════════
+function doAITurn(){
+  if(!isVsAI || G.cur!==2) return;
+  setBattleStatus('🤖 KI denkt nach…');
+
+  setTimeout(()=>{
+    const style=aiStyle;
+    let options=[];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      const p=G.board[r][c];
+      if(!p||p.player!==2) continue;
+      const moves=getMoves(r,c);
+      if(moves.length>0) options.push({r,c,piece:p,moves});
+    }
+
+    if(options.length===0){endTurn();return;}
+
+    // Chaos: try active abilities first
+    if(style==='chaos'){
+      for(let opt of options){
+        const pcat=pc(opt.piece.id);
+        if(pcat.active){
+          const used=G.abilityUses[opt.piece.uid]||0;
+          if(used<pcat.active.uses && pcat.id==='warp_knight'){
+            let kingR=-1,kingC=-1;
+            for(let rr=0;rr<ROWS;rr++) for(let cc=0;cc<COLS;cc++)
+              if(G.board[rr][cc]?.id==='king'&&G.board[rr][cc]?.player===1){kingR=rr;kingC=cc;}
+            if(kingR>=0){
+              let bestR=0,bestC=0,bestDist=999;
+              for(let rr=0;rr<ROWS;rr++) for(let cc=0;cc<COLS;cc++){
+                if(!G.board[rr][cc]){const d=Math.abs(rr-kingR)+Math.abs(cc-kingC);if(d<bestDist&&d>0){bestDist=d;bestR=rr;bestC=cc;}}
+              }
+              const moving=G.board[opt.r][opt.c];
+              G.board[bestR][bestC]=moving;
+              G.board[opt.r][opt.c]=null;
+              G.abilityUses[moving.uid]=(G.abilityUses[moving.uid]||0)+1;
+              renderBattle(); updateCaptured();
+              setBattleStatus('🌀 KI teleportiert!');
+              setTimeout(()=>endTurn(),400);
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    // Score all moves
+    function scoreMove(opt,move){
+      const [tr,tc,isAtk]=move;
+      let score=0;
+      if(isAtk){
+        const target=G.board[tr][tc];
+        if(!target) return -999;
+        const tcat=pc(target.id);
+        score+=tcat.cost*10;
+        if(target.id==='king') score+=10000;
+        if(style==='aggressive') score+=50;
+        if(style==='defensive') score+=20;
+      }
+      // Advance toward enemy (p2 moves from row 0 downward = positive dir)
+      score+=(tr-opt.r)*3;
+      if(style==='chaos') score+=Math.random()*30;
+      if(style==='defensive'&&opt.piece.id==='storm_queen'&&!isAtk) score-=20;
+      return score;
+    }
+
+    let best=null,bestScore=-Infinity;
+    options.forEach(opt=>{
+      opt.moves.forEach(move=>{
+        const s=scoreMove(opt,move);
+        if(s>bestScore){bestScore=s;best={opt,move};}
+      });
+    });
+
+    if(!best){endTurn();return;}
+
+    const {opt,move}=best;
+    const [tr,tc,isAtk]=move;
+
+    // Highlight selected piece briefly
+    G.sel=[opt.r,opt.c];
+    renderBattle();
+
+    setTimeout(()=>{
+      G.sel=null; G.valid=[];
+      // Execute move directly (no doMove to avoid side effects)
+      const moving=G.board[opt.r][opt.c];
+      const target=G.board[tr][tc];
+      if(target){
+        // Check shield
+        if(target.shields>0){
+          target.shields--;
+          G.board[tr][tc]=moving;
+          G.board[opt.r][opt.c]=null;
+        } else {
+          G.captured.push(target);
+          G.board[tr][tc]=moving;
+          G.board[opt.r][opt.c]=null;
+          if(target.id==='king'){
+            renderBattle();
+            setTimeout(()=>showGameOver(2),300);
+            return;
+          }
+        }
+        // Storm queen bonus turn for AI
+        if(moving.id==='storm_queen'&&!G.bonusTurn){
+          G.bonusTurn=true;
+          renderBattle(); updateCaptured();
+          setBattleStatus('⚡ Sturmkönigin greift nochmal an!');
+          setTimeout(()=>{G.bonusTurn=false;doAITurn2ndStrike(tr,tc,moving);},600);
+          return;
+        }
+      } else {
+        G.board[tr][tc]=moving;
+        G.board[opt.r][opt.c]=null;
+      }
+      renderBattle(); updateCaptured();
+      setTimeout(()=>endTurn(),300);
+    },450);
+  },600);
+}
+
+function doAITurn2ndStrike(r,c,piece){
+  const moves=getMoves(r,c);
+  const attacks=moves.filter(m=>m[2]);
+  if(attacks.length>0){
+    const [tr,tc]=attacks[0];
+    const target=G.board[tr][tc];
+    if(target){
+      G.captured.push(target);
+      G.board[tr][tc]=piece;
+      G.board[r][c]=null;
+      if(target.id==='king'){renderBattle();setTimeout(()=>showGameOver(2),300);return;}
+    }
+    renderBattle(); updateCaptured();
+  }
+  G.bonusTurn=false;
+  setTimeout(()=>endTurn(),300);
+}
+
+// endTurn already defined above — we extend it here by redefining cleanly
+// (JS uses last definition wins for function declarations, but these are all
+//  in the same scope so we use a flag instead)
+const _aiEndTurnPatch = true; // marker so we know patch is loaded
+
+// ═══════════════════════════════════════════
+// PATCH armyNext for campaign
+// ═══════════════════════════════════════════
+const _origArmyNext = armyNext;
+function armyNext(){
+  const player=currentSetupPlayer;
+  const army=getArmy(player);
+  if(!army.some(x=>x.id==='king')) army.push({id:'king',uid:Date.now(),shields:0});
+
+  if(player===1 && G.isCampaign){
+    // Campaign: skip P2 setup, go straight to placement
+    startPlacementPhaseAI();
+  } else if(player===1){
+    currentSetupPlayer=2;
+    G.p2Points=30; G.p2Army=[];
+    buildArmySetup(2);
+    document.getElementById('army-next-btn').textContent='Kampf starten ⚔';
+  } else {
+    startPlacementPhase();
+  }
+}
+
+function startPlacementPhaseAI(){
+  // Place AI pieces automatically on rows 0-1
+  const aiArmy=[...G.p2Army];
+  let positions=[];
+  for(let r=0;r<2;r++) for(let c=0;c<COLS;c++) positions.push([r,c]);
+  // Shuffle positions
+  for(let i=positions.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[positions[i],positions[j]]=[positions[j],positions[i]];}
+  aiArmy.forEach((piece,i)=>{
+    if(i<positions.length){const [r,c]=positions[i];G.board[r][c]={...piece,player:2};}
+  });
+
+  // Player places their pieces
+  placPlayer=1;
+  G.p1Hand=[...G.p1Army];
+  G.selHandIdx=-1;
+  goScreen('s-placement');
+  renderPlacScreen(1);
+  // Override placDone for campaign
+  document.getElementById('plac-done-btn').onclick=()=>{
+    startBattle();
+    // Reset onclick
+    document.getElementById('plac-done-btn').onclick=placDone;
+  };
+}
+
+// ═══════════════════════════════════════════
+// PATCH showGameOver for campaign
+// ═══════════════════════════════════════════
+const _origShowGameOver = showGameOver;
+function showGameOver(winner){
+  const isCampaignWin = isVsAI && winner===1;
+  const isCampaignLoss = isVsAI && winner===2;
+
+  if(isCampaignWin && currentBoss){
+    campaignProgress[currentBoss.id]=true;
+    localStorage.setItem('cr_campaign',JSON.stringify(campaignProgress));
+  }
+
+  const wrap=document.createElement('div');
+  wrap.className='gameover-wrap';
+  let inner='';
+  if(isVsAI){
+    if(isCampaignWin){
+      inner=`
+        <div class="go-crown">🏆</div>
+        <div class="go-title" style="color:#f0d080;">Sieg!</div>
+        <div style="font-size:16px;color:${currentBoss?.color||'#90caf9'};margin-bottom:4px;">${currentBoss?.name||'Boss'} besiegt!</div>
+        <div class="go-sub">"${currentBoss?.quote?.replace(/^"|"$/g,'')||'...'}"</div>
+      `;
+    } else {
+      inner=`
+        <div class="go-crown">💀</div>
+        <div class="go-title" style="color:var(--red);">Niederlage</div>
+        <div class="go-sub">Der Boss war zu stark. Versuche es erneut!</div>
+      `;
+    }
+    inner+=`
+      <button class="go-btn btn-gold" onclick="retryBoss()">↺ Nochmal</button>
+      <button class="go-btn btn-dark" style="margin-top:8px" onclick="this.closest('.gameover-wrap').remove();isVsAI=false;buildCampaignMap();goScreen('s-campaign')">← Zur Kampagne</button>
+    `;
+  } else {
+    inner=`
+      <div class="go-crown">👑</div>
+      <div class="go-title">Spieler ${winner} gewinnt!</div>
+      <div class="go-sub">König wurde geschlagen</div>
+      <button class="go-btn btn-gold" onclick="restartAll()">Neues Spiel ↺</button>
+      <button class="go-btn btn-dark" style="margin-top:8px" onclick="this.closest('.gameover-wrap').remove();goScreen('s-title')">Hauptmenü</button>
+    `;
+  }
+  wrap.innerHTML=`<div class="gameover-box">${inner}</div>`;
+  document.body.appendChild(wrap);
+}
+
+function retryBoss(){
+  document.querySelector('.gameover-wrap')?.remove();
+  if(currentBoss) startCampaignBattle(currentBoss.id);
+  else goScreen('s-campaign');
+}
+
+// ═══════════════════════════════════════════
+// ONLINE PVP — PeerJS
+// ═══════════════════════════════════════════
+let peer = null;
+let peerConn = null;
+let onlineRole = null; // 'host' or 'guest'
+let myRoomCode = null;
+let isOnlinePvP = false;
+let onlineMyPlayer = 1; // which player number am I (host=1, guest=2)
+
+function randomCode(){
+  return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+function setOnlineStatus(text, type='waiting'){
+  const dot = document.querySelector('#online-status-bar .status-dot');
+  const txt = document.getElementById('online-status-text');
+  if(dot){ dot.className='status-dot dot-'+type; }
+  if(txt) txt.textContent=text;
+}
+
+function initPeer(){
+  // Reset UI
+  document.getElementById('room-created-area').style.display='none';
+  document.getElementById('join-code-input').value='';
+  setOnlineStatus('Bereit — Raum erstellen oder beitreten','waiting');
+
+  if(peer){ try{peer.destroy();}catch(e){} peer=null; }
+  peerConn=null; onlineRole=null; isOnlinePvP=false;
+}
+
+function createRoom(){
+  setOnlineStatus('Verbindung wird aufgebaut…','waiting');
+  myRoomCode = randomCode();
+  const peerId = 'chessroyale-'+myRoomCode;
+
+  peer = new Peer(peerId, {debug:0});
+
+  peer.on('open', ()=>{
+    document.getElementById('my-room-code').textContent=myRoomCode;
+    document.getElementById('room-created-area').style.display='block';
+    setOnlineStatus('Warte auf Freund mit Code: '+myRoomCode,'waiting');
+    onlineRole='host';
+  });
+
+  peer.on('connection', conn=>{
+    peerConn=conn;
+    setupConnection(conn);
+    setOnlineStatus('Freund verbunden! Spiel startet…','connected');
+    // Host starts the game as player 1 (white)
+    setTimeout(()=>startOnlineGame('host', conn), 800);
+  });
+
+  peer.on('error', err=>{
+    setOnlineStatus('Fehler: '+err.type,'error');
+  });
+}
+
+function joinRoom(){
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if(code.length<4){ setOnlineStatus('Bitte Code eingeben!','error'); return; }
+
+  setOnlineStatus('Verbinde mit Raum '+code+'…','waiting');
+  const peerId = 'chessroyale-'+code+'-guest-'+randomCode().substring(0,4);
+
+  peer = new Peer(peerId, {debug:0});
+
+  peer.on('open', ()=>{
+    const conn = peer.connect('chessroyale-'+code, {reliable:true});
+    peerConn=conn;
+    setupConnection(conn);
+
+    conn.on('open', ()=>{
+      onlineRole='guest';
+      setOnlineStatus('Verbunden! Warte auf Spielstart…','connected');
+    });
+
+    conn.on('error', err=>{
+      setOnlineStatus('Verbindungsfehler: '+err,'error');
+    });
+  });
+
+  peer.on('error', err=>{
+    setOnlineStatus('Konnte Raum nicht finden. Code korrekt?','error');
+  });
+}
+
+function setupConnection(conn){
+  conn.on('data', data=>{
+    handleOnlineMessage(data);
+  });
+  conn.on('close', ()=>{
+    if(isOnlinePvP){
+      alert('Verbindung getrennt!');
+      leaveOnline();
+    }
+  });
+}
+
+function sendOnlineMsg(type, payload){
+  if(peerConn && peerConn.open){
+    peerConn.send({type, payload});
+  }
+}
+
+function handleOnlineMessage(msg){
+  switch(msg.type){
+    case 'game_start':
+      // Guest receives host's game state and army
+      G = msg.payload.gameState;
+      G.p1Army = msg.payload.p1Army;
+      isOnlinePvP=true;
+      onlineMyPlayer=2; // guest is player 2
+      // Now guest builds their army
+      currentSetupPlayer=2;
+      showCoinToss(1, ()=>{ // host is always white (player 1)
+        buildArmySetup(2);
+        goScreen('s-army-setup');
+      });
+      break;
+
+    case 'guest_army':
+      // Host receives guest's army
+      G.p2Army = msg.payload;
+      // Place AI (reuse placement for both)
+      isOnlinePvP=true;
+      startOnlinePlacement();
+      break;
+
+    case 'placement_done':
+      // Receive opponent's board placements
+      msg.payload.forEach(({r,c,piece})=>{
+        G.board[r][c]=piece;
+      });
+      // If both placed, start battle
+      if(G._myPlacementDone){
+        startBattle();
+      } else {
+        G._opponentPlacementDone=true;
+        setOnlineStatus('Warte auf Platzierung des Gegners…','waiting');
+      }
+      break;
+
+    case 'move':
+      applyOnlineMove(msg.payload);
+      break;
+
+    case 'ability':
+      applyOnlineAbility(msg.payload);
+      break;
+
+    case 'end_turn':
+      G.cur = onlineMyPlayer;
+      G.turn = msg.payload.turn;
+      G.sel=null; G.valid=[]; G.movesDone=false; G.activeAbility=null;
+      renderBattle(); updateBattleHUD();
+      setBattleStatus('Dein Zug! Klicke auf eine Figur.');
+      document.getElementById('ability-row').innerHTML='';
+      const etBtn=document.querySelector('.end-turn-btn');
+      if(etBtn) etBtn.disabled=false;
+      break;
+  }
+}
+
+function copyRoomCode(){
+  navigator.clipboard?.writeText(myRoomCode).then(()=>{
+    setOnlineStatus('Code kopiert: '+myRoomCode,'connected');
+  }).catch(()=>{
+    setOnlineStatus('Code: '+myRoomCode+' (manuell kopieren)','waiting');
+  });
+}
+
+function leaveOnline(){
+  isOnlinePvP=false;
+  if(peer){try{peer.destroy();}catch(e){} peer=null;}
+  peerConn=null; onlineRole=null;
+  goScreen('s-setup-menu');
+}
+
+function startOnlineGame(role, conn){
+  G=freshGame();
+  G.whitePlayer=1; // host always white
+  G.isCampaign=false;
+  G.isOnline=true;
+  onlineMyPlayer=1; // host is player 1
+  isOnlinePvP=true;
+
+  // Send game init to guest
+  sendOnlineMsg('game_start', {
+    gameState: {
+      board: G.board,
+      cur:1, sel:null, valid:[],
+      turn:1, captured:[], abilityUses:{}, shields:{},
+      bonusTurn:false, activeAbility:null, movesDone:false,
+      p1Army:[], p2Army:[],
+      p1Hand:[], p2Hand:[],
+      selHandIdx:-1,
+      whitePlayer:1, isOnline:true
+    },
+    p1Army: []
+  });
+
+  // Host builds their army
+  currentSetupPlayer=1;
+  showCoinToss(1, ()=>{
+    buildArmySetup(1);
+    // Override army next for online
+    document.getElementById('army-next-btn').onclick=onlineArmyDone;
+    goScreen('s-army-setup');
+  });
+}
+
+function onlineArmyDone(){
+  const army=getArmy(onlineMyPlayer);
+  if(!army.some(x=>x.id==='king')) army.push({id:'king',uid:Date.now(),shields:0});
+
+  if(onlineMyPlayer===1){
+    // Host sends army to guest and waits
+    G.p1Army=[...army];
+    sendOnlineMsg('guest_army_request', {});
+    setOnlineStatus('Warte auf Gegner…','waiting');
+    goScreen('s-online');
+  } else {
+    // Guest sends army to host
+    G.p2Army=[...army];
+    sendOnlineMsg('guest_army', army);
+    setOnlineStatus('Armee gesendet! Warte…','waiting');
+    goScreen('s-online');
+  }
+}
+
+function startOnlinePlacement(){
+  G._myPlacementDone=false;
+  G._opponentPlacementDone=false;
+  placPlayer=onlineMyPlayer;
+  G.p1Hand=[...G.p1Army];
+  G.p2Hand=[...G.p2Army];
+  G.selHandIdx=-1;
+  goScreen('s-placement');
+  renderPlacScreen(onlineMyPlayer);
+
+  // Override placement done button
+  document.getElementById('plac-done-btn').onclick=onlinePlacementDone;
+}
+
+function onlinePlacementDone(){
+  // Collect my pieces from board
+  const myPieces=[];
+  const myRows = onlineMyPlayer===1 ? [6,7] : [0,1];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(G.board[r][c]?.player===onlineMyPlayer) myPieces.push({r,c,piece:G.board[r][c]});
+  }
+  sendOnlineMsg('placement_done', myPieces);
+  G._myPlacementDone=true;
+
+  if(G._opponentPlacementDone){
+    document.getElementById('plac-done-btn').onclick=placDone;
+    startBattle();
+  } else {
+    setOnlineStatus('Warte auf Platzierung des Gegners…','waiting');
+    goScreen('s-online');
+  }
+}
+
+function applyOnlineMove(payload){
+  const {sr,sc,tr,tc} = payload;
+  const moving = G.board[sr][sc];
+  const target = G.board[tr][tc];
+  if(target){
+    G.captured.push(target);
+    if(target.id==='king'){
+      G.board[tr][tc]=moving; G.board[sr][sc]=null;
+      renderBattle();
+      setTimeout(()=>showGameOver(onlineMyPlayer===1?2:1),300);
+      return;
+    }
+  }
+  G.board[tr][tc]=moving; G.board[sr][sc]=null;
+  renderBattle(); updateCaptured();
+}
+
+function applyOnlineAbility(payload){
+  const {type,sr,sc,tr,tc,uid} = payload;
+  if(type==='teleport'||type==='shadow_jump'){
+    const moving=G.board[sr][sc];
+    G.board[tr][tc]=moving; G.board[sr][sc]=null;
+    G.abilityUses[uid]=(G.abilityUses[uid]||0)+1;
+    renderBattle();
+  }
+}
+
+// NOTE: doMove and endTurn are defined earlier and already handle isOnlinePvP via flags
+// The online patches are integrated directly into those functions below via the isOnlinePvP flag
+// No separate override needed here — handled inline in the battle functions above
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+buildCollection();
+renderDeckBuilder();
+buildCampaignMap();
+</script>
+</body>
+</html>
